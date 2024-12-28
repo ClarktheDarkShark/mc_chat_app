@@ -5,10 +5,13 @@ from flask import Blueprint, request, jsonify, session
 import openai
 from openai import OpenAI
 
+from .web_search import WebSearchCog
+
 class ChatBlueprint:
     def __init__(self, app_instance):
         self.bp = Blueprint("chat_blueprint", __name__)
         self.client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+        self.web_search_cog = WebSearchCog()
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
         self.add_routes()
@@ -37,7 +40,9 @@ class ChatBlueprint:
             # Analyze user intent
             intent = self.analyze_user_intent(user_message, conversation)
 
+            print()
             print('intent', intent)
+            print()
 
             # Handle different intents
             assistant_reply = ""
@@ -54,12 +59,16 @@ class ChatBlueprint:
                         assistant_reply = "No image prompt provided."
                 elif intent.get("code_intent", False):
                     # Handle code-related intents (Placeholder)
+
                     assistant_reply = "Sure, I can help you with code-related queries."
                     conversation.append({"role": "assistant", "content": assistant_reply})
                     session['conversation_history'] = conversation
                 elif intent.get("internet_search", False):
                     # Handle internet search (Placeholder)
-                    assistant_reply = "Performing an internet search for you."
+                    # Perform web search
+                    query = user_message  # Or extract a specific part of the message
+                    search_content = await self.web_search_cog.web_search(query)
+                    assistant_reply = search_content
                     conversation.append({"role": "assistant", "content": assistant_reply})
                     session['conversation_history'] = conversation
                 else:
@@ -120,7 +129,9 @@ class ChatBlueprint:
             intent = json.loads(intent_json)
             return intent
         except Exception as e:
+            print()
             print(f'Error in analyzing user intent: {e}')
+            print()
             # Return default intent if analysis fails
             return {
                 "image_generation": False,
@@ -144,7 +155,9 @@ class ChatBlueprint:
             image_url = image_response.data[0].url
             return image_url
         except Exception as e:
+            print()
             print(f'Error in image generation: {e}')
+            print()
             return "Error generating image."
 
     def generate_chat_response(self, conversation, model, temperature):
@@ -159,5 +172,7 @@ class ChatBlueprint:
             assistant_reply = response.choices[0].message.content
             return assistant_reply
         except Exception as e:
+            print()
             print(f'Error in chat response generation: {e}')
+            print()
             return "Error generating response."

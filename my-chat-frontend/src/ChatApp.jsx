@@ -18,9 +18,9 @@ import {
   Paper,
   List,
   ListItem,
+  CircularProgress,
 } from "@mui/material";
 
-// Define USMC Color Theme with Black Background
 const theme = createTheme({
   palette: {
     primary: {
@@ -48,6 +48,7 @@ function ChatApp() {
   const [conversation, setConversation] = useState([]);
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
     setError("");
@@ -56,6 +57,19 @@ function ChatApp() {
       setError("Please enter a message first.");
       return;
     }
+
+    // Create a new message object for the user
+    const userMessage = { role: "user", content: message.trim() };
+
+    // Create a placeholder for the assistant's response
+    const assistantPlaceholder = { role: "assistant", content: "Assistant is typing...", loading: true };
+
+    // Update the conversation state optimistically
+    setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
+
+    // Clear the input field and set loading to true
+    setMessage("");
+    setLoading(true);
 
     const payload = {
       message: message.trim(),
@@ -74,18 +88,34 @@ function ChatApp() {
 
       if (data.error) {
         setError(data.error);
+        // Update the placeholder with the error message
+        setConversation((prev) => {
+          const updated = [...prev];
+          updated.pop(); // Remove the placeholder
+          updated.push({ role: "assistant", content: `Error: ${data.error}`, loading: false });
+          return updated;
+        });
       } else {
-        // Append user message and assistant reply to conversation
-        setConversation((prev) => [
-          ...prev,
-          { role: "user", content: message.trim() },
-          { role: "assistant", content: data.assistant_reply },
-        ]);
-        setMessage("");
+        // Replace the placeholder with the actual assistant reply
+        setConversation((prev) => {
+          const updated = [...prev];
+          updated.pop(); // Remove the placeholder
+          updated.push({ role: "assistant", content: data.assistant_reply, loading: false });
+          return updated;
+        });
       }
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Check the console.");
+      // Update the placeholder with the error message
+      setConversation((prev) => {
+        const updated = [...prev];
+        updated.pop(); // Remove the placeholder
+        updated.push({ role: "assistant", content: "Error: Something went wrong.", loading: false });
+        return updated;
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,7 +134,7 @@ function ChatApp() {
           <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
             <Typography variant="h4" gutterBottom color="primary">
-              USMC AI Agent DEMO
+              USMC Demo Agent
             </Typography>
 
             {/* Conversation Box at the Top */}
@@ -119,17 +149,26 @@ function ChatApp() {
                       <ListItem>
                         <Box
                           sx={{
-                            backgroundColor: msg.role === "user" ? 'primary.main' : 'grey.700',
-                            color: msg.role === "user" ? 'white' : 'white',
+                            backgroundColor: msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700'),
+                            color: 'white',
                             borderRadius: 2,
                             p: 1,
                             maxWidth: '80%',
                             ml: msg.role === "user" ? 'auto' : 0,
+                            display: 'flex',
+                            alignItems: 'center',
                           }}
                         >
-                          {msg.role === "assistant" && msg.content.startsWith("![Generated Image](") ? (
+                          {msg.role === "assistant" && msg.loading ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <CircularProgress size={20} color="secondary" />
+                              <Typography variant="body2" sx={{ ml: 1 }}>
+                                Assistant is typing...
+                              </Typography>
+                            </Box>
+                          ) : msg.role === "assistant" && msg.content.startsWith("![Generated Image](") ? (
                             <img
-                              src={msg.content.slice(19, -1)} // Extract URL from markdown
+                              src={msg.content.slice(19, -1)} // Corrected slice
                               alt="Generated"
                               style={{ maxWidth: '100%', borderRadius: '8px' }}
                             />
@@ -160,8 +199,15 @@ function ChatApp() {
             </Box>
 
             {/* Send and Clear Buttons */}
-            <Button variant="contained" color="primary" onClick={sendMessage} fullWidth sx={{ mb: 2 }}>
-              Send
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={sendMessage} 
+              fullWidth 
+              sx={{ mb: 2 }}
+              disabled={loading} // Disable button when loading
+            >
+              {loading ? "Sending..." : "Send"} {/* Change button text based on loading state */}
             </Button>
             <Button variant="outlined" color="secondary" onClick={() => setConversation([])} fullWidth sx={{ mb: 2 }}>
               Clear Conversation
