@@ -1,27 +1,33 @@
+# app.py
 import os
 from flask import Flask, send_from_directory
 from cogs.chat import chat_blueprint
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__, static_folder='static', static_url_path='')
-
-    # Register chat blueprint for API
+    
+    # Set a secret key for session management
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-default-secret-key')
+    
+    # Enable CORS if your frontend is served from a different origin
+    CORS(app, supports_credentials=True)
+    
+    # Register blueprint for API
     app.register_blueprint(chat_blueprint, url_prefix="/api")
-
-    # Serve React build files (index.html) for the root
+    
+    # Serve React's index.html for the root
     @app.route("/")
     def index():
-        return send_from_directory(app.static_folder, "index.html")
-
-    # Catch-all route for React client-side routing (e.g., /about, /chat)
+        return send_from_directory(app.static_folder, 'index.html')
+    
+    # Catch-all for React Router
     @app.route("/<path:path>")
     def static_proxy(path):
-        # If the file exists, serve it
         if os.path.exists(os.path.join(app.static_folder, path)):
             return send_from_directory(app.static_folder, path)
-        # Otherwise, serve index.html (React handles routing)
-        return send_from_directory(app.static_folder, "index.html")
-
+        return send_from_directory(app.static_folder, 'index.html')
+    
     return app
 
 app = create_app()
