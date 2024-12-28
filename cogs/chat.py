@@ -74,11 +74,22 @@ class ChatBlueprint:
                     })
 
                 elif intent.get("code_intent", False):
-                    # Handle code-related intents (Placeholder)
-
-                    code_info = "Sure, I can help you with code-related queries."
-                    temp_conversation[0]['content'] += code_info
-                    temp_conversation[-1]['content'] += '\n\nYou have been supplimented with information from your code base to answer this query.'
+                    # Handle code-related intents
+                    code_content = self.code_files_cog.get_all_code_files_content()
+                    if code_content:
+                        # Append code content to the system prompt
+                        temp_conversation[0]['content'] += "\n\n" + code_content
+                        temp_conversation[-1]['content'] += '\n\nYou have been supplemented with information from your code base to answer this query.'
+                        intent['code_intent'] = True  # Ensure intent shows True
+                    else:
+                        assistant_reply = "No code files found to provide."
+                        conversation.append({"role": "assistant", "content": assistant_reply})
+                        session['conversation_history'] = conversation
+                        return jsonify({
+                            "user_message": user_message,
+                            "assistant_reply": assistant_reply,
+                            "conversation_history": conversation
+                        })
 
                 elif intent.get("internet_search", False):
                     # Handle internet search (Placeholder)
