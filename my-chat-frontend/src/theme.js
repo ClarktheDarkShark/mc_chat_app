@@ -5,21 +5,20 @@ const theme = createTheme({
   palette: {
     mode: 'light', // or 'dark'
     primary: {
-      main: '#1976d2', // default MUI blue
+      main: '#1976d2',
     },
     secondary: {
-      main: '#ff4081', // pink, for example
+      main: '#ff4081',
     },
   },
   typography: {
-    fontFamily: 'Poppins, sans-serif', // a modern Google Font
+    fontFamily: 'Poppins, sans-serif',
     h4: {
       fontWeight: 600,
     },
-    // You can override more text styles if desired
   },
   shape: {
-    borderRadius: 12, // rounded corners
+    borderRadius: 12,
   },
 });
 

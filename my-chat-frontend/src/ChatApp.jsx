@@ -11,6 +11,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Paper,
 } from "@mui/material";
 
 function ChatApp() {
@@ -58,74 +59,76 @@ function ChatApp() {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Chat with OpenAI
-      </Typography>
-
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          label="System Prompt"
-          multiline
-          rows={3}
-          fullWidth
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          sx={{ my: 1 }}
-        />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <FormControl fullWidth>
-          <InputLabel id="model-select-label">Model</InputLabel>
-          <Select
-            labelId="model-select-label"
-            value={model}
-            label="Model"
-            onChange={(e) => setModel(e.target.value)}
-          >
-            <MenuItem value="gpt-4o">gpt-4o</MenuItem>
-            <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
-            <MenuItem value="o1-mini">o1-mini</MenuItem>
-            <MenuItem value="o1-preview">o1-preview</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography gutterBottom>Temperature: {temperature}</Typography>
-        <Slider
-          min={0}
-          max={1}
-          step={0.1}
-          value={temperature}
-          onChange={(e, val) => setTemperature(val)}
-        />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          label="Your Message"
-          fullWidth
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-      </Box>
-
-      <Button variant="contained" onClick={sendMessage}>
-        Send
-      </Button>
-
-      {error && (
-        <Typography color="error" sx={{ mt: 2 }}>
-          Error: {error}
+      <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Chat with OpenAI
         </Typography>
-      )}
-      {assistantReply && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6">Assistant Reply:</Typography>
-          <Typography>{assistantReply}</Typography>
+
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            label="System Prompt"
+            multiline
+            rows={3}
+            fullWidth
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            sx={{ my: 1 }}
+          />
         </Box>
-      )}
+
+        <Box sx={{ mb: 3 }}>
+          <FormControl fullWidth>
+            <InputLabel id="model-select-label">Model</InputLabel>
+            <Select
+              labelId="model-select-label"
+              value={model}
+              label="Model"
+              onChange={(e) => setModel(e.target.value)}
+            >
+              <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+              <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+              <MenuItem value="o1-mini">o1-mini</MenuItem>
+              <MenuItem value="o1-preview">o1-preview</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <Typography gutterBottom>Temperature: {temperature}</Typography>
+          <Slider
+            min={0}
+            max={1}
+            step={0.1}
+            value={temperature}
+            onChange={(e, val) => setTemperature(val)}
+          />
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            label="Your Message"
+            fullWidth
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </Box>
+
+        <Button variant="contained" onClick={sendMessage} fullWidth>
+          Send
+        </Button>
+
+        {error && (
+          <Typography color="error" sx={{ mt: 2 }}>
+            Error: {error}
+          </Typography>
+        )}
+        {assistantReply && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6">Assistant Reply:</Typography>
+            <Typography>{assistantReply}</Typography>
+          </Box>
+        )}
+      </Paper>
     </Container>
   );
 }
