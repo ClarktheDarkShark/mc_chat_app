@@ -1,6 +1,8 @@
 // src/ChatApp.jsx
 import React, { useState } from "react";
-import { Fade } from '@mui/material';
+import { Fade, IconButton } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import CloseIcon from '@mui/icons-material/Close';
 
 import {
   TextField,
@@ -26,8 +28,9 @@ function ChatApp() {
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
   const [conversation, setConversation] = useState([]);
   const [error, setError] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  async function sendMessage() {
+  const sendMessage = async () => {
     setError("");
 
     if (!message.trim()) {
@@ -65,11 +68,18 @@ function ChatApp() {
       console.error(err);
       setError("Something went wrong. Check the console.");
     }
-  }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto' }}>
         {/* Conversation Box at the Top */}
         {conversation.length > 0 && (
           <Box sx={{ mb: 3, maxHeight: '400px', overflowY: 'auto' }}>
@@ -102,56 +112,16 @@ function ChatApp() {
           USMC Demo Agent
         </Typography>
 
-        {/* System Prompt */}
-        <Box sx={{ mb: 3 }}>
-          <TextField
-            label="System Prompt"
-            multiline
-            rows={3}
-            fullWidth
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            sx={{ my: 1 }}
-          />
-        </Box>
-
-        {/* Model Selection */}
-        <Box sx={{ mb: 3 }}>
-          <FormControl fullWidth>
-            <InputLabel id="model-select-label">Model</InputLabel>
-            <Select
-              labelId="model-select-label"
-              value={model}
-              label="Model"
-              onChange={(e) => setModel(e.target.value)}
-            >
-              <MenuItem value="gpt-4o">gpt-4o</MenuItem>
-              <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
-              <MenuItem value="o1-mini">o1-mini</MenuItem>
-              <MenuItem value="o1-preview">o1-preview</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Temperature Slider */}
-        <Box sx={{ mb: 3 }}>
-          <Typography gutterBottom>Temperature: {temperature}</Typography>
-          <Slider
-            min={0}
-            max={1}
-            step={0.1}
-            value={temperature}
-            onChange={(e, val) => setTemperature(val)}
-          />
-        </Box>
-
         {/* Message Input */}
         <Box sx={{ mb: 3 }}>
           <TextField
             label="Your Message"
             fullWidth
+            multiline
+            maxRows={4}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
           />
         </Box>
 
@@ -162,6 +132,59 @@ function ChatApp() {
         <Button variant="outlined" color="secondary" onClick={() => setConversation([])} fullWidth sx={{ mt: 2 }}>
           Clear Conversation
         </Button>
+
+        {/* Settings Button */}
+        <Box sx={{ position: 'relative', mt: 2 }}>
+          <IconButton onClick={() => setSettingsOpen(!settingsOpen)}>
+            {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
+          </IconButton>
+          {settingsOpen && (
+            <Box sx={{ mt: 2 }}>
+              {/* System Prompt */}
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  label="System Prompt"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  sx={{ my: 1 }}
+                />
+              </Box>
+
+              {/* Model Selection */}
+              <Box sx={{ mb: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="model-select-label">Model</InputLabel>
+                  <Select
+                    labelId="model-select-label"
+                    value={model}
+                    label="Model"
+                    onChange={(e) => setModel(e.target.value)}
+                  >
+                    <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+                    <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+                    <MenuItem value="o1-mini">o1-mini</MenuItem>
+                    <MenuItem value="o1-preview">o1-preview</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {/* Temperature Slider */}
+              <Box sx={{ mb: 3 }}>
+                <Typography gutterBottom>Temperature: {temperature}</Typography>
+                <Slider
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={temperature}
+                  onChange={(e, val) => setTemperature(val)}
+                />
+              </Box>
+            </Box>
+          )}
+        </Box>
 
         {/* Error Message */}
         {error && (
