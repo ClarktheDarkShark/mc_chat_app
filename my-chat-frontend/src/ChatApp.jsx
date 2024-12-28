@@ -216,14 +216,11 @@ function ChatApp() {
                 ref={conversationRef} // Attach ref here
                 sx={{
                   mb: 3,
-                  maxHeight: { xs: '300px', sm: '500px' },
+                  maxHeight: { xs: '500px', sm: '700px' },
                   overflowY: 'auto',
                   paddingRight: 1, // Optional: Add some padding for scrollbar
                 }}
               >
-                <Typography variant="h6" gutterBottom color="secondary">
-                  Conversation:
-                </Typography>
                 <List>
                   {conversation.map((msg, index) => {
                     const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");

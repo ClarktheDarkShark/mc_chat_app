@@ -21,6 +21,7 @@ class ChatBlueprint:
 
         # Pass the OpenAI client to WebSearchCog
         self.web_search_cog = WebSearchCog(openai_client=self.client)
+        self.code_files_cog = CodeFilesCog()
         
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
