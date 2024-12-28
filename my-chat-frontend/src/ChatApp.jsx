@@ -137,9 +137,9 @@ function ChatApp() {
       {/* Apply global styles for the body */}
       <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', padding: 2 }}>
         <Container maxWidth="md" sx={{ mt: 4 }}>
-          <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
+          <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '900px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
-            <Typography variant={{ xs: "h5", md: "h4" }} gutterBottom color="primary">
+            <Typography variant="h4" gutterBottom color="primary">
               USMC Demo Agent
             </Typography>
 
