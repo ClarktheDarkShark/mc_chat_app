@@ -1,5 +1,7 @@
 // src/ChatApp.jsx
 import React, { useState } from "react";
+import { Fade } from '@mui/material';
+
 import {
   TextField,
   Button,
@@ -12,6 +14,9 @@ import {
   Select,
   MenuItem,
   Paper,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 
 function ChatApp() {
@@ -19,12 +24,11 @@ function ChatApp() {
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevent responses.");
-  const [assistantReply, setAssistantReply] = useState("");
+  const [conversation, setConversation] = useState([]);
   const [error, setError] = useState("");
 
   async function sendMessage() {
     setError("");
-    setAssistantReply("");
 
     if (!message.trim()) {
       setError("Please enter a message first.");
@@ -49,7 +53,13 @@ function ChatApp() {
       if (data.error) {
         setError(data.error);
       } else {
-        setAssistantReply(data.assistant_reply);
+        // Append user message and assistant reply to conversation
+        setConversation((prev) => [
+          ...prev,
+          { role: "user", content: message.trim() },
+          { role: "assistant", content: data.assistant_reply },
+        ]);
+        setMessage("");
       }
     } catch (err) {
       console.error(err);
@@ -61,7 +71,7 @@ function ChatApp() {
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
         <Typography variant="h4" gutterBottom>
-          USMC Demo Agent
+          Chat with OpenAI
         </Typography>
 
         <Box sx={{ mb: 3 }}>
@@ -116,16 +126,40 @@ function ChatApp() {
         <Button variant="contained" onClick={sendMessage} fullWidth>
           Send
         </Button>
+        <Button variant="outlined" color="secondary" onClick={() => setConversation([])} fullWidth sx={{ mt: 2 }}>
+          Clear Conversation
+        </Button>
+
 
         {error && (
           <Typography color="error" sx={{ mt: 2 }}>
             Error: {error}
           </Typography>
         )}
-        {assistantReply && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6">Assistant Reply:</Typography>
-            <Typography>{assistantReply}</Typography>
+
+        {conversation.length > 0 && (
+          <Box sx={{ mt: 3, maxHeight: '400px', overflowY: 'auto' }}>
+            <Typography variant="h6">Conversation:</Typography>
+            <List>
+              {conversation.map((msg, index) => (
+                <Fade in={true} timeout={500} key={index}>
+                  <ListItem>
+                    <Box
+                      sx={{
+                        backgroundColor: msg.role === "user" ? 'primary.main' : 'grey.300',
+                        color: msg.role === "user" ? 'white' : 'black',
+                        borderRadius: 2,
+                        p: 1,
+                        maxWidth: '80%',
+                        ml: msg.role === "user" ? 'auto' : 0,
+                      }}
+                    >
+                      <Typography variant="body1">{msg.content}</Typography>
+                    </Box>
+                  </ListItem>
+                </Fade>
+              ))}
+            </List>
           </Box>
         )}
       </Paper>
