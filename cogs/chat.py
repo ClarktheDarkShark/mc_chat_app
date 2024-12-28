@@ -22,14 +22,25 @@ def chat():
 
     try:
         # Call OpenAI API
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        '''
+        Models:
+            o1-mini
+            o1-preview
+            gpt-4o
+            gpt-4o-mini
+        '''
+        response = self.client.chat.completions.create(
+            model='gpt-4o',
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": user_message}
-            ]
+            ],
+            # max_tokens=max_tokens,
+            temperature=0.7
         )
-        assistant_reply = response["choices"][0]["message"]["content"]
+
+        assistant_reply = response.choices[0].message.content
+
         return jsonify({
             "user_message": user_message,
             "assistant_reply": assistant_reply
