@@ -87,8 +87,8 @@ class ChatBlueprint:
                     search_content = self.web_search_cog.web_search(query)
                     search_content = f'\n\nThe following is information from the internet to help with your answer: {search_content}'
 
-                    temp_conversation[0]['content'] += search_content
-                    temp_conversation[-1]['content'] += '\n\nYou have been supplimented with information from the internent to answer this query.'
+                    # temp_conversation[0]['content'] += search_content
+                    temp_conversation[-1]['content'] += f'\n\nYou are being supplimented with the following information from the internent to answer this query: {search_content}'
                 else:
                     temp_conversation = conversation
 
