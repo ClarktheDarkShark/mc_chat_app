@@ -1,5 +1,5 @@
 // src/ChatApp.jsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Fade, IconButton, createTheme, ThemeProvider } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
@@ -49,6 +49,12 @@ function ChatApp() {
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversation]);
 
   const sendMessage = async () => {
     setError("");
@@ -133,13 +139,13 @@ function ChatApp() {
         <Container maxWidth="md" sx={{ mt: 4 }}>
           <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
-            <Typography variant="h4" gutterBottom color="primary">
+            <Typography variant={{ xs: "h5", md: "h4" }} gutterBottom color="primary">
               USMC Demo Agent
             </Typography>
 
             {/* Conversation Box at the Top */}
             {conversation.length > 0 && (
-              <Box sx={{ mb: 3, maxHeight: { xs: '400px', sm: '600px' }, overflowY: 'auto' }}>
+              <Box sx={{ mb: 3, maxHeight: { xs: '300px', sm: '500px' }, overflowY: 'auto' }}>
                 <Typography variant="h6" gutterBottom color="secondary">
                   Conversation:
                 </Typography>
@@ -187,6 +193,7 @@ function ChatApp() {
                       </Fade>
                     );
                   })}
+                  <div ref={messagesEndRef} />
                 </List>
               </Box>
             )}
