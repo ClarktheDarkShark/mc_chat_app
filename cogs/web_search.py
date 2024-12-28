@@ -96,7 +96,7 @@ class WebSearchCog:
         if not items:
             return "No search results found."
 
-        urls = [item.get('link') for item in items[:2] if item.get('link')]
+        urls = [item.get('link') for item in items[:5] if item.get('link')]
         if not urls:
             return "No valid URLs found in search results."
 
