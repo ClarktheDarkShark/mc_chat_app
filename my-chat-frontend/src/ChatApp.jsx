@@ -170,7 +170,7 @@ function ChatApp() {
                             <img
                               src={msg.content.slice(19, -1)} // Corrected slice
                               alt="Generated"
-                              style={{ maxWidth: '100%', borderRadius: '8px' }}
+                              style={{ maxWidth: '70%', borderRadius: '8px' }}
                             />
                           ) : (
                             <Typography variant="body1">{msg.content}</Typography>
