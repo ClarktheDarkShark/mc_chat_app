@@ -1,5 +1,7 @@
 import React from 'react';
 import ChatApp from "./ChatApp";
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 function App() {
   return (
