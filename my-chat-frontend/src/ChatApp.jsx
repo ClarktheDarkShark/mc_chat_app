@@ -154,8 +154,8 @@ function ChatApp() {
           <Paper elevation={6} sx={{ p: 3, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant={{ xs: "h5", md: "h4" }} color="primary">
-                USMC Demo Agent
+              <Typography variant="h4" gutterBottom color="primary">
+                USMC Agent Demo
               </Typography>
               <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
                 {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
