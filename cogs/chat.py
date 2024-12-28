@@ -8,6 +8,7 @@ import copy
 # from openai import OpenAI
 
 from .web_search import WebSearchCog
+from .code_files import CodeFilesCog
 
 class ChatBlueprint:
     def __init__(self, app_instance):
