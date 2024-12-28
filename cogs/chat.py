@@ -9,6 +9,7 @@ class ChatBlueprint:
     def __init__(self, app_instance):
         self.bp = Blueprint("chat_blueprint", __name__)
         self.client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+        self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
         self.add_routes()
 
@@ -140,7 +141,7 @@ class ChatBlueprint:
                 size="1024x1024",
                 n=1
             )
-            image_url = image_response['data'][0]['url']
+            image_url = image_response.data[0].url
             return image_url
         except Exception as e:
             print(f'Error in image generation: {e}')
