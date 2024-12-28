@@ -1,12 +1,13 @@
 import os
 import openai
+from openai import OpenAI
 from flask import Blueprint, request, jsonify
 
 # Create a Blueprint for chat functionality
 chat_blueprint = Blueprint("chat_blueprint", __name__)
 
 # Use your OpenAI API key from environment variable
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 @chat_blueprint.route("/chat", methods=["POST"])
 def chat():
@@ -29,7 +30,7 @@ def chat():
             gpt-4o
             gpt-4o-mini
         '''
-        response = self.client.chat.completions.create(
+        response = client.chat.completions.create(
             model='gpt-4o',
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
