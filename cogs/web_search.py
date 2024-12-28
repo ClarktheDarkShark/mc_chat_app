@@ -1,9 +1,9 @@
 # cogs/web_search.py
 import os
 import json
-import aiohttp
+import requests
 import validators
-from utils.fetch_page_content import fetch_page_content
+from utils.fetch_page_content import fetch_page_content  # Ensure this is synchronous
 
 class WebSearchCog:
     def __init__(self):
@@ -26,16 +26,19 @@ class WebSearchCog:
                 "q": query,
             }
 
-            with aiohttp.ClientSession() as session:
-                with session.get(self.search_url, params=params) as search_response:
-                    if search_response.status == 200:
-                        search_results = search_response.json()
-                        return self.fetch_search_content(search_results)
-                    else:
-                        error_content = search_response.text()
-                        print(f"Error fetching search results: {search_response.status}")
-                        print(f"Error details: {error_content}")
-                        return "An error occurred while performing the web search."
+            try:
+                response = requests.get(self.search_url, params=params, timeout=10)
+                if response.status_code == 200:
+                    search_results = response.json()
+                    return self.fetch_search_content(search_results)
+                else:
+                    error_content = response.text
+                    print(f"Error fetching search results: {response.status_code}")
+                    print(f"Error details: {error_content}")
+                    return "An error occurred while performing the web search."
+            except Exception as e:
+                print(f"Exception during web search: {e}")
+                return "An error occurred while performing the web search."
 
     def fetch_search_content(self, search_results):
         """Fetch content from search results."""
