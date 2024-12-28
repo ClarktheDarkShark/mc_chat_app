@@ -9,6 +9,7 @@ class FlaskApp:
         self.configure_app()
         self.register_blueprints()
         self.add_routes()
+        self.conversation_history = []
 
     def configure_app(self):
         # Set configurations
@@ -37,6 +38,9 @@ class FlaskApp:
         self.app.run(host="0.0.0.0", port=port, debug=True)
 
 
+# Create the app instance globally for Gunicorn
+app_instance = FlaskApp()
+app = app_instance.app
+
 if __name__ == "__main__":
-    app_instance = FlaskApp()
-    app_instance.run()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)

@@ -29,6 +29,11 @@ def chat():
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
+    self.conversation_history.append({
+        'role': 'user',
+        'content': message.content,
+        'name': author_name
+    })
     try:
         response = client.chat.completions.create(
             model=model,
