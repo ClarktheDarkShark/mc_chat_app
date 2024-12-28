@@ -39,7 +39,9 @@ function ChatApp() {
   const [message, setMessage] = useState("");
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
-  const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
+  const [systemPrompt, setSystemPrompt] = useState(
+    "You are a USMC AI agent. Conduct a reasoning stage before responding. \
+    Give a very brief explaination of the logic used in your response. Then, provide a relevant response.");
   const [conversation, setConversation] = useState([]);
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);

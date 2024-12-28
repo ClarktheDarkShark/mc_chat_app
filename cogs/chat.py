@@ -17,7 +17,9 @@ class ChatBlueprint:
             user_message = data.get("message", "")
             model = data.get("model", "gpt-4o")
             temperature = data.get("temperature", 0.7)
-            system_prompt = data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
+            system_prompt = data.get("system_prompt", 
+                "You are a USMC AI agent. Conduct a reasoning stage before responding. "
+                "Give a very brief explaination of the logic used in your response. Then, provide a relevant response.")
 
             if not user_message:
                 return jsonify({"error": "No message provided"}), 400
