@@ -44,7 +44,7 @@ class WebSearchCog:
                 temperature=0.7,
             )
             # Extract the generated search terms
-            search_terms = response.choices[0].message['content'].strip()
+            search_terms = response.choices[0].message.content
             # Optionally, parse the search terms if they're in a list format
             # For simplicity, assume the LLM returns a comma-separated string
             optimized_query = search_terms.split('\n')[0]  # Take the first line
