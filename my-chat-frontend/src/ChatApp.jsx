@@ -139,46 +139,54 @@ function ChatApp() {
 
             {/* Conversation Box at the Top */}
             {conversation.length > 0 && (
-              <Box sx={{ mb: 3, maxHeight: '500px', overflowY: 'auto' }}>
+              <Box sx={{ mb: 3, maxHeight: { xs: '300px', sm: '500px' }, overflowY: 'auto' }}>
                 <Typography variant="h6" gutterBottom color="secondary">
                   Conversation:
                 </Typography>
                 <List>
-                  {conversation.map((msg, index) => (
-                    <Fade in={true} timeout={500} key={index}>
-                      <ListItem>
-                        <Box
-                          sx={{
-                            backgroundColor: msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700'),
-                            color: 'white',
-                            borderRadius: 2,
-                            p: 1,
-                            maxWidth: '80%',
-                            ml: msg.role === "user" ? 'auto' : 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}
-                        >
-                          {msg.role === "assistant" && msg.loading ? (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <CircularProgress size={20} color="secondary" />
-                              <Typography variant="body2" sx={{ ml: 1 }}>
-                                Assistant is typing...
-                              </Typography>
-                            </Box>
-                          ) : msg.role === "assistant" && msg.content.startsWith("![Generated Image](") ? (
-                            <img
-                              src={msg.content.slice(19, -1)} // Corrected slice
-                              alt="Generated"
-                              style={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}
-                            />
-                          ) : (
-                            <Typography variant="body1">{msg.content}</Typography>
-                          )}
-                        </Box>
-                      </ListItem>
-                    </Fade>
-                  ))}
+                  {conversation.map((msg, index) => {
+                    const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
+
+                    return (
+                      <Fade in={true} timeout={500} key={index}>
+                        <ListItem>
+                          <Box
+                            sx={{
+                              backgroundColor: isImage
+                                ? 'transparent' // No background for images
+                                : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+                              color: 'white',
+                              borderRadius: 2,
+                              p: isImage ? 0 : 1, // No padding for images
+                              maxWidth: '80%',
+                              ml: msg.role === "user" ? 'auto' : 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {msg.role === "assistant" && msg.loading ? (
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CircularProgress size={20} color="secondary" />
+                                <Typography variant="body2" sx={{ ml: 1 }}>
+                                  Assistant is typing...
+                                </Typography>
+                              </Box>
+                            ) : isImage ? (
+                              <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+                                <img
+                                  src={msg.content.slice(19, -1)} // Corrected slice
+                                  alt="Generated"
+                                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                                />
+                              </Box>
+                            ) : (
+                              <Typography variant="body1">{msg.content}</Typography>
+                            )}
+                          </Box>
+                        </ListItem>
+                      </Fade>
+                    );
+                  })}
                 </List>
               </Box>
             )}
