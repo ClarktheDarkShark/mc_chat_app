@@ -31,7 +31,9 @@ class FlaskApp:
             return send_from_directory(self.app.static_folder, 'index.html')
 
 
+# Create the app instance globally for Gunicorn
+app_instance = FlaskApp()
+app = app_instance.app  # Expose the app instance for Gunicorn
+
 if __name__ == "__main__":
-    app_instance = FlaskApp()
-    app = app_instance.app
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app_instance.run()
