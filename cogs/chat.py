@@ -67,7 +67,7 @@ class ChatBlueprint:
                     # Handle internet search (Placeholder)
                     # Perform web search
                     query = user_message  # Or extract a specific part of the message
-                    search_content = await self.web_search_cog.web_search(query)
+                    search_content = self.web_search_cog.web_search(query)
                     assistant_reply = search_content
                     conversation.append({"role": "assistant", "content": assistant_reply})
                     session['conversation_history'] = conversation

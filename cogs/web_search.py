@@ -11,10 +11,10 @@ class WebSearchCog:
         self.search_engine_id = os.getenv('SEARCH_ENGINE_ID')
         self.search_url = "https://www.googleapis.com/customsearch/v1"
 
-    async def web_search(self, query):
+    def web_search(self, query):
         """Perform a web search using the Google Custom Search API."""
         if validators.url(query):
-            content = await fetch_page_content(query)
+            content = fetch_page_content(query)
             if content:
                 return content[:3000]  # Limit content length
             else:
@@ -26,18 +26,18 @@ class WebSearchCog:
                 "q": query,
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.search_url, params=params) as search_response:
+            with aiohttp.ClientSession() as session:
+                with session.get(self.search_url, params=params) as search_response:
                     if search_response.status == 200:
-                        search_results = await search_response.json()
-                        return await self.fetch_search_content(search_results)
+                        search_results = search_response.json()
+                        return self.fetch_search_content(search_results)
                     else:
-                        error_content = await search_response.text()
+                        error_content = search_response.text()
                         print(f"Error fetching search results: {search_response.status}")
                         print(f"Error details: {error_content}")
                         return "An error occurred while performing the web search."
 
-    async def fetch_search_content(self, search_results):
+    def fetch_search_content(self, search_results):
         """Fetch content from search results."""
         if not search_results:
             return "Couldn't fetch information from the internet."
@@ -53,7 +53,7 @@ class WebSearchCog:
         contents = []
         for url in urls:
             print(f"Fetching content from {url}")
-            content = await fetch_page_content(url)
+            content = fetch_page_content(url)
             if content:
                 contents.append(content[:3000])  # Limit content length
 
