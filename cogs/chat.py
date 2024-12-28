@@ -36,6 +36,8 @@ class ChatBlueprint:
             # Analyze user intent
             intent = self.analyze_user_intent(user_message, conversation)
 
+            print('intent', intent)
+
             # Handle different intents
             assistant_reply = ""
             try:
