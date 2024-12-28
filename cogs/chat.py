@@ -92,7 +92,7 @@ class ChatBlueprint:
                     '- "rand_num": (list)\n\n'
                     'Respond with only the JSON object and no additional text.\n\n'
                     'Guidelines:\n'
-                    '1. **image_generation** should be True only when the user requests an image. Example: "Can you show me a USMC officer saluting?"\n'
+                    '1. **image_generation** should be True only when an image is requested. Example: "Can you show me a USMC officer saluting?"\n'
                     '2. **image_prompt** should contain the prompt for image generation if **image_generation** is True.\n'
                     '3. **internet_search** should be True when the user asks for information that might require an internet search.\n'
                     '4. **favorite_songs** should be True when the user interacts with song-related commands.\n'
@@ -108,10 +108,10 @@ class ChatBlueprint:
         analysis_prompt.extend(conversation_hist[-5:])
 
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=analysis_prompt,
-                max_tokens=150,
+                max_tokens=300,
                 temperature=0
             )
             intent_json = response.choices[0].message.content.strip()
