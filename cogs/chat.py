@@ -3,11 +3,12 @@ import os
 import json
 from flask import Blueprint, request, jsonify, session
 import openai
+from openai import OpenAI
 
 class ChatBlueprint:
     def __init__(self, app_instance):
         self.bp = Blueprint("chat_blueprint", __name__)
-        openai.api_key = os.getenv('OPENAI_KEY')
+        self.client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
         self.app_instance = app_instance
         self.add_routes()
 
@@ -146,9 +147,10 @@ class ChatBlueprint:
     def generate_chat_response(self, conversation, model, temperature):
         """Generate a chat response using OpenAI's ChatCompletion."""
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=conversation,
+                # max_tokens=max_tokens,
                 temperature=temperature
             )
             assistant_reply = response.choices[0].message.content
