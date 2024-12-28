@@ -2,14 +2,15 @@
 import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-from cogs.chat import ChatBlueprint
 from flask_session import Session
+from cogs.chat import ChatBlueprint
 
 class FlaskApp:
     def __init__(self):
         self.app = Flask(__name__, static_folder='static', static_url_path='')
         self.app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-default-secret-key')
         self.app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
+        self.app.config['SESSION_PERMANENT'] = False
         CORS(self.app, supports_credentials=True)
         Session(self.app)  # Initialize server-side sessions
 

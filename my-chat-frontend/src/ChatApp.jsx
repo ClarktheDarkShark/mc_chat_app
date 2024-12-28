@@ -20,7 +20,7 @@ import {
   ListItem,
 } from "@mui/material";
 
-// Define USMC Color Theme
+// Define USMC Color Theme with Black Background
 const theme = createTheme({
   palette: {
     primary: {
@@ -30,7 +30,12 @@ const theme = createTheme({
       main: '#FFD700', // Gold
     },
     background: {
-      default: '#f5f5f5',
+      default: '#000000', // Black Background
+      paper: '#1a1a1a',    // Dark Paper Background for contrast
+    },
+    text: {
+      primary: '#ffffff', // White text for contrast
+      secondary: '#FFD700', // Gold text if needed
     },
   },
 });
@@ -39,9 +44,7 @@ function ChatApp() {
   const [message, setMessage] = useState("");
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
-  const [systemPrompt, setSystemPrompt] = useState(
-    "You are a USMC AI agent. Conduct a reasoning stage before responding. \
-    Give a very brief explaination of the logic used in your response. Then, provide a relevant response.");
+  const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
   const [conversation, setConversation] = useState([]);
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -95,129 +98,149 @@ function ChatApp() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto' }}>
-          {/* Header */}
-          <Typography variant="h4" gutterBottom color="primary">
-            USMC Demo Agent
-          </Typography>
+      {/* Apply global styles for the body */}
+      <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', padding: 2 }}>
+        <Container maxWidth="md" sx={{ mt: 4 }}>
+          <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
+            {/* In-App Header */}
+            <Typography variant="h4" gutterBottom color="primary">
+              USMC Demo Agent
+            </Typography>
 
-          {/* Conversation Box at the Top */}
-          {conversation.length > 0 && (
-            <Box sx={{ mb: 3, maxHeight: '400px', overflowY: 'auto' }}>
-              <Typography variant="h6" gutterBottom>
-                Conversation:
-              </Typography>
-              <List>
-                {conversation.map((msg, index) => (
-                  <Fade in={true} timeout={500} key={index}>
-                    <ListItem>
-                      <Box
-                        sx={{
-                          backgroundColor: msg.role === "user" ? 'primary.main' : 'grey.300',
-                          color: msg.role === "user" ? 'white' : 'black',
-                          borderRadius: 2,
-                          p: 1,
-                          maxWidth: '80%',
-                          ml: msg.role === "user" ? 'auto' : 0,
-                        }}
-                      >
-                        <Typography variant="body1">{msg.content}</Typography>
-                      </Box>
-                    </ListItem>
-                  </Fade>
-                ))}
-              </List>
-            </Box>
-          )}
-
-          {/* Message Input */}
-          <Box sx={{ mb: 3 }}>
-            <TextField
-              label="Your Message"
-              fullWidth
-              multiline
-              maxRows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-          </Box>
-
-          {/* Send and Clear Buttons */}
-          <Button variant="contained" color="primary" onClick={sendMessage} fullWidth>
-            Send
-          </Button>
-          <Button variant="outlined" color="secondary" onClick={() => setConversation([])} fullWidth sx={{ mt: 2 }}>
-            Clear Conversation
-          </Button>
-
-          {/* Settings Button */}
-          <Box sx={{ position: 'relative', mt: 2 }}>
-            <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary">
-              {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
-            </IconButton>
-            {settingsOpen && (
-              <Box sx={{ mt: 2 }}>
-                {/* System Prompt */}
-                <Box sx={{ mb: 3 }}>
-                  <TextField
-                    label="System Prompt"
-                    multiline
-                    rows={3}
-                    fullWidth
-                    value={systemPrompt}
-                    onChange={(e) => setSystemPrompt(e.target.value)}
-                    sx={{ my: 1 }}
-                  />
-                </Box>
-
-                {/* Model Selection */}
-                <Box sx={{ mb: 3 }}>
-                  <FormControl fullWidth>
-                    <InputLabel id="model-select-label">Model</InputLabel>
-                    <Select
-                      labelId="model-select-label"
-                      value={model}
-                      label="Model"
-                      onChange={(e) => setModel(e.target.value)}
-                    >
-                      <MenuItem value="gpt-4o">gpt-4o</MenuItem>
-                      <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
-                      <MenuItem value="o1-mini">o1-mini</MenuItem>
-                      <MenuItem value="o1-preview">o1-preview</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-
-                {/* Temperature Slider */}
-                <Box sx={{ mb: 3 }}>
-                  <Typography gutterBottom>Temperature: {temperature}</Typography>
-                  <Slider
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    value={temperature}
-                    onChange={(e, val) => setTemperature(val)}
-                  />
-                </Box>
+            {/* Conversation Box at the Top */}
+            {conversation.length > 0 && (
+              <Box sx={{ mb: 3, maxHeight: '400px', overflowY: 'auto' }}>
+                <Typography variant="h6" gutterBottom color="secondary">
+                  Conversation:
+                </Typography>
+                <List>
+                  {conversation.map((msg, index) => (
+                    <Fade in={true} timeout={500} key={index}>
+                      <ListItem>
+                        <Box
+                          sx={{
+                            backgroundColor: msg.role === "user" ? 'primary.main' : 'grey.700',
+                            color: msg.role === "user" ? 'white' : 'white',
+                            borderRadius: 2,
+                            p: 1,
+                            maxWidth: '80%',
+                            ml: msg.role === "user" ? 'auto' : 0,
+                          }}
+                        >
+                          {msg.role === "assistant" && msg.content.startsWith("![Generated Image](") ? (
+                            <img
+                              src={msg.content.slice(18, -1)} // Extract URL from markdown
+                              alt="Generated"
+                              style={{ maxWidth: '100%', borderRadius: '8px' }}
+                            />
+                          ) : (
+                            <Typography variant="body1">{msg.content}</Typography>
+                          )}
+                        </Box>
+                      </ListItem>
+                    </Fade>
+                  ))}
+                </List>
               </Box>
             )}
-          </Box>
 
-          {/* Error Message */}
-          {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
-              Error: {error}
+            {/* Message Input */}
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                label="Your Message"
+                fullWidth
+                multiline
+                maxRows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                InputLabelProps={{ style: { color: '#ffffff' } }}
+                InputProps={{ style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' } }}
+              />
+            </Box>
+
+            {/* Send and Clear Buttons */}
+            <Button variant="contained" color="primary" onClick={sendMessage} fullWidth sx={{ mb: 2 }}>
+              Send
+            </Button>
+            <Button variant="outlined" color="secondary" onClick={() => setConversation([])} fullWidth sx={{ mb: 2 }}>
+              Clear Conversation
+            </Button>
+
+            {/* Settings Button */}
+            <Box sx={{ position: 'relative', mt: 2 }}>
+              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary">
+                {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
+              </IconButton>
+              {settingsOpen && (
+                <Box sx={{ mt: 2 }}>
+                  {/* System Prompt */}
+                  <Box sx={{ mb: 3 }}>
+                    <TextField
+                      label="System Prompt"
+                      multiline
+                      rows={3}
+                      fullWidth
+                      value={systemPrompt}
+                      onChange={(e) => setSystemPrompt(e.target.value)}
+                      sx={{ my: 1 }}
+                      InputLabelProps={{ style: { color: '#ffffff' } }}
+                      InputProps={{ style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' } }}
+                    />
+                  </Box>
+
+                  {/* Model Selection */}
+                  <Box sx={{ mb: 3 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="model-select-label" sx={{ color: '#ffffff' }}>Model</InputLabel>
+                      <Select
+                        labelId="model-select-label"
+                        value={model}
+                        label="Model"
+                        onChange={(e) => setModel(e.target.value)}
+                        sx={{ color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' }}
+                      >
+                        <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+                        <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+                        <MenuItem value="o1-mini">o1-mini</MenuItem>
+                        <MenuItem value="o1-preview">o1-preview</MenuItem>
+                        <MenuItem value="dalle-3">DALL-E 3</MenuItem> {/* Add DALL-E 3 option */}
+                      </Select>
+                    </FormControl>
+                  </Box>
+
+                  {/* Temperature Slider */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom color="secondary">Temperature: {temperature}</Typography>
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.1}
+                      value={temperature}
+                      onChange={(e, val) => setTemperature(val)}
+                      sx={{
+                        color: '#FFD700', // Gold color for slider
+                      }}
+                    />
+                  </Box>
+                </Box>
+              )}
+            </Box>
+
+            {/* Error Message */}
+            {error && (
+              <Typography color="error" sx={{ mt: 2 }}>
+                Error: {error}
+              </Typography>
+            )}
+
+            {/* Footer */}
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+              *This application can produce incorrect responses.
             </Typography>
-          )}
-
-          {/* Footer */}
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
-            *This application can produce incorrect responses.
-          </Typography>
-        </Paper>
-      </Container>
+          </Paper>
+        </Container>
+      </Box>
     </ThemeProvider>
   );
 }
