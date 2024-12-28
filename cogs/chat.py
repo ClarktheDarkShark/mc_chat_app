@@ -29,12 +29,15 @@ class ChatBlueprint:
             })
 
             try:
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    *self.app_instance.conversation_history
+                ]
+                print('messages', messages)
+                
                 response = self.client.chat.completions.create(
                     model=model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        *self.app_instance.conversation_history
-                    ],
+                    messages=messages,
                     temperature=temperature
                 )
 

@@ -80,6 +80,11 @@ function ChatApp() {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto' }}>
+        {/* Header */}
+        <Typography variant="h4" gutterBottom>
+          USMC Demo Agent
+        </Typography>
+
         {/* Conversation Box at the Top */}
         {conversation.length > 0 && (
           <Box sx={{ mb: 3, maxHeight: '400px', overflowY: 'auto' }}>
@@ -107,10 +112,7 @@ function ChatApp() {
           </Box>
         )}
 
-        {/* Header */}
-        <Typography variant="h4" gutterBottom>
-          USMC Demo Agent
-        </Typography>
+
 
         {/* Message Input */}
         <Box sx={{ mb: 3 }}>
