@@ -139,7 +139,7 @@ function ChatApp() {
 
             {/* Conversation Box at the Top */}
             {conversation.length > 0 && (
-              <Box sx={{ mb: 3, maxHeight: '400px', overflowY: 'auto' }}>
+              <Box sx={{ mb: 3, maxHeight: '500px', overflowY: 'auto' }}>
                 <Typography variant="h6" gutterBottom color="secondary">
                   Conversation:
                 </Typography>
@@ -170,7 +170,7 @@ function ChatApp() {
                             <img
                               src={msg.content.slice(19, -1)} // Corrected slice
                               alt="Generated"
-                              style={{ maxWidth: '70%', borderRadius: '8px' }}
+                              style={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}
                             />
                           ) : (
                             <Typography variant="body1">{msg.content}</Typography>
