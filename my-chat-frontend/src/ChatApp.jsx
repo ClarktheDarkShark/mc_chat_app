@@ -1,15 +1,26 @@
 // src/ChatApp.jsx
 import React, { useState } from "react";
+import {
+  TextField,
+  Button,
+  Container,
+  Typography,
+  Box,
+  Slider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
 function ChatApp() {
   const [message, setMessage] = useState("");
-  const [model, setModel] = useState("gpt-4o");  // default
+  const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.");
   const [assistantReply, setAssistantReply] = useState("");
   const [error, setError] = useState("");
 
-  // Sends the user's message & parameters to your Flask API
   async function sendMessage() {
     setError("");
     setAssistantReply("");
@@ -19,19 +30,18 @@ function ChatApp() {
       return;
     }
 
-    // Build the request body
     const payload = {
       message: message.trim(),
       model,
       system_prompt: systemPrompt.trim(),
-      temperature
+      temperature,
     };
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
 
@@ -47,64 +57,76 @@ function ChatApp() {
   }
 
   return (
-    <div style={{ margin: "2rem auto", maxWidth: "600px" }}>
-      <h1>Chat with OpenAI</h1>
-      
-      <div style={{ marginBottom: "1rem" }}>
-        <label>System Prompt:</label>
-        <textarea
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Chat with OpenAI
+      </Typography>
+
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          label="System Prompt"
+          multiline
+          rows={3}
+          fullWidth
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
-          rows={3}
-          style={{ width: "100%", display: "block" }}
+          sx={{ my: 1 }}
         />
-      </div>
+      </Box>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <label>Model: </label>
-        <select value={model} onChange={(e) => setModel(e.target.value)}>
-          <option value="gpt-4o">gpt-4o</option>
-          <option value="gpt-4o-mini">gpt-4o-mini</option>
-          <option value="o1-mini">o1-mini</option>
-          <option value="o1-preview">o1-preview</option>
-        </select>
-      </div>
+      <Box sx={{ mb: 3 }}>
+        <FormControl fullWidth>
+          <InputLabel id="model-select-label">Model</InputLabel>
+          <Select
+            labelId="model-select-label"
+            value={model}
+            label="Model"
+            onChange={(e) => setModel(e.target.value)}
+          >
+            <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+            <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+            <MenuItem value="o1-mini">o1-mini</MenuItem>
+            <MenuItem value="o1-preview">o1-preview</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <label>Temperature: {temperature}</label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
+      <Box sx={{ mb: 3 }}>
+        <Typography gutterBottom>Temperature: {temperature}</Typography>
+        <Slider
+          min={0}
+          max={1}
+          step={0.1}
           value={temperature}
-          onChange={(e) => setTemperature(Number(e.target.value))}
-          style={{ width: "100%", display: "block" }}
+          onChange={(e, val) => setTemperature(val)}
         />
-      </div>
+      </Box>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <label>Message:</label>
-        <input
-          type="text"
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          label="Your Message"
+          fullWidth
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          style={{ width: "100%" }}
         />
-      </div>
+      </Box>
 
-      <button onClick={sendMessage} style={{ padding: "0.5rem 1rem" }}>
+      <Button variant="contained" onClick={sendMessage}>
         Send
-      </button>
+      </Button>
 
-      {error && <p style={{ color: "red", marginTop: "1rem" }}>Error: {error}</p>}
-      {assistantReply && (
-        <div style={{ marginTop: "1rem" }}>
-          <h3>Assistant Reply:</h3>
-          <p>{assistantReply}</p>
-        </div>
+      {error && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          Error: {error}
+        </Typography>
       )}
-    </div>
+      {assistantReply && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6">Assistant Reply:</Typography>
+          <Typography>{assistantReply}</Typography>
+        </Box>
+      )}
+    </Container>
   );
 }
 
