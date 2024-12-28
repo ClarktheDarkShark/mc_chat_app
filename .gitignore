@@ -1,0 +1,19 @@
+# Ignore environment files and API keys
+.env
+
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore system files
+.DS_Store
+
+# Ignore IDE/project settings
+.vscode/
+*.sublime-workspace
+
+# Ignore logs and temp files
+*.log
+tmp/
+.env
+.env
