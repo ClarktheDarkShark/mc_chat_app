@@ -18,7 +18,7 @@ function ChatApp() {
   const [message, setMessage] = useState("");
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
-  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.");
+  const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevent responses.");
   const [assistantReply, setAssistantReply] = useState("");
   const [error, setError] = useState("");
 
@@ -61,7 +61,7 @@ function ChatApp() {
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
         <Typography variant="h4" gutterBottom>
-          Chat with OpenAI
+          USMC Demo Agent
         </Typography>
 
         <Box sx={{ mb: 3 }}>

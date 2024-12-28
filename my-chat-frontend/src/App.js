@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>OpenAI Chat Interface</h1>
+        <h1>USMC Demo Agent</h1>
       </header>
       
       <main>
@@ -14,7 +14,7 @@ function App() {
       </main>
       
       <footer>
-        <p>Built with React & Flask</p>
+        <p>*This application can produce incorrect responses.</p>
       </footer>
     </div>
   );
