@@ -139,7 +139,7 @@ function ChatApp() {
 
             {/* Conversation Box at the Top */}
             {conversation.length > 0 && (
-              <Box sx={{ mb: 3, maxHeight: { xs: '300px', sm: '500px' }, overflowY: 'auto' }}>
+              <Box sx={{ mb: 3, maxHeight: { xs: '400px', sm: '600px' }, overflowY: 'auto' }}>
                 <Typography variant="h6" gutterBottom color="secondary">
                   Conversation:
                 </Typography>
