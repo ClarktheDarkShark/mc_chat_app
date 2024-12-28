@@ -6,7 +6,7 @@ from openai import OpenAI
 chat_blueprint = Blueprint("chat_blueprint", __name__)
 
 # Initialize OpenAI client with API key
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
 
 @chat_blueprint.route("/chat", methods=["POST"])
 def chat():
