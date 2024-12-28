@@ -139,9 +139,18 @@ function ChatApp() {
 
   return (
     <ThemeProvider theme={theme}>
-      {/* Apply global styles for the body */}
-      <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', padding: 2 }}>
-        <Container maxWidth="md" sx={{ mt: 4 }}>
+      {/* Apply global styles for the body with flex column-reverse */}
+      <Box
+        sx={{
+          backgroundColor: 'background.default',
+          minHeight: '100vh',
+          padding: 2,
+          display: 'flex',
+          flexDirection: 'column-reverse', // Start content at the bottom
+          justifyContent: 'flex-start',
+        }}
+      >
+        <Container maxWidth="md" sx={{ mb: 4 }}> {/* Changed mt to mb for reversed layout */}
           <Paper elevation={6} sx={{ p: 3, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -210,13 +219,13 @@ function ChatApp() {
               </Box>
             )}
 
-            {/* Conversation Box at the Top */}
+            {/* Conversation Box */}
             {conversation.length > 0 && (
               <Box
-                ref={conversationRef} // Attach ref here
+                ref={conversationRef}
                 sx={{
                   mb: 3,
-                  maxHeight: { xs: '500px', sm: '700px' },
+                  maxHeight: { xs: '300px', sm: '500px' }, // Adjusted for mobile and larger screens
                   overflowY: 'auto',
                   paddingRight: 1, // Optional: Add some padding for scrollbar
                 }}
