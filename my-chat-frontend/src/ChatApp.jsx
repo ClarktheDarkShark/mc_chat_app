@@ -8,7 +8,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 
 import {
   TextField,
-  Button,
   Container,
   Typography,
   Box,
@@ -52,10 +51,14 @@ function ChatApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const messagesEndRef = useRef(null);
+  // Ref for the conversation box
+  const conversationRef = useRef(null);
 
+  // Auto-scroll effect for the conversation box
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (conversationRef.current) {
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+    }
   }, [conversation]);
 
   const sendMessage = async () => {
@@ -142,7 +145,7 @@ function ChatApp() {
           <Paper elevation={6} sx={{ p: 3, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h4" gutterBottom color="primary">
+              <Typography variant={{ xs: "h5", md: "h4" }} color="primary">
                 USMC Demo Agent
               </Typography>
               <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
@@ -209,7 +212,15 @@ function ChatApp() {
 
             {/* Conversation Box at the Top */}
             {conversation.length > 0 && (
-              <Box sx={{ mb: 3, maxHeight: { xs: '300px', sm: '500px' }, overflowY: 'auto' }}>
+              <Box
+                ref={conversationRef} // Attach ref here
+                sx={{
+                  mb: 3,
+                  maxHeight: { xs: '300px', sm: '500px' },
+                  overflowY: 'auto',
+                  paddingRight: 1, // Optional: Add some padding for scrollbar
+                }}
+              >
                 <Typography variant="h6" gutterBottom color="secondary">
                   Conversation:
                 </Typography>
@@ -257,7 +268,6 @@ function ChatApp() {
                       </Fade>
                     );
                   })}
-                  <div ref={messagesEndRef} />
                 </List>
               </Box>
             )}
