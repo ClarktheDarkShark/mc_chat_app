@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Fade, IconButton, createTheme, ThemeProvider } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
+import SendIcon from '@mui/icons-material/Send';
+import ClearIcon from '@mui/icons-material/Clear';
 
 import {
   TextField,
@@ -137,11 +139,73 @@ function ChatApp() {
       {/* Apply global styles for the body */}
       <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', padding: 2 }}>
         <Container maxWidth="md" sx={{ mt: 4 }}>
-          <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
+          <Paper elevation={6} sx={{ p: 3, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
-            <Typography variant="h4" gutterBottom color="primary">
-              USMC Demo Agent
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h4" gutterBottom color="primary">
+                USMC Demo Agent
+              </Typography>
+              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
+                {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
+              </IconButton>
+            </Box>
+
+            {/* Settings Panel */}
+            {settingsOpen && (
+              <Box sx={{ mb: 3 }}>
+                {/* System Prompt */}
+                <Box sx={{ mb: 2 }}>
+                  <TextField
+                    label="System Prompt"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    sx={{ my: 1 }}
+                    InputLabelProps={{ style: { color: '#ffffff' } }}
+                    InputProps={{ style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' } }}
+                  />
+                </Box>
+
+                {/* Model Selection */}
+                <Box sx={{ mb: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel id="model-select-label" sx={{ color: '#ffffff' }}>Model</InputLabel>
+                    <Select
+                      labelId="model-select-label"
+                      value={model}
+                      label="Model"
+                      onChange={(e) => setModel(e.target.value)}
+                      sx={{ color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' }}
+                    >
+                      <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+                      <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+                      <MenuItem value="o1-mini">o1-mini</MenuItem>
+                      <MenuItem value="o1-preview">o1-preview</MenuItem>
+                      <MenuItem value="dalle-3">DALL-E 3</MenuItem> {/* Add DALL-E 3 option */}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                {/* Temperature Slider */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography gutterBottom color="secondary" variant="body2">
+                    Temperature: {temperature}
+                  </Typography>
+                  <Slider
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    value={temperature}
+                    onChange={(e, val) => setTemperature(val)}
+                    sx={{
+                      color: '#FFD700', // Gold color for slider
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
 
             {/* Conversation Box at the Top */}
             {conversation.length > 0 && (
@@ -155,7 +219,7 @@ function ChatApp() {
 
                     return (
                       <Fade in={true} timeout={500} key={index}>
-                        <ListItem>
+                        <ListItem sx={{ display: 'block' }}>
                           <Box
                             sx={{
                               backgroundColor: isImage
@@ -198,10 +262,11 @@ function ChatApp() {
               </Box>
             )}
 
-            {/* Message Input */}
-            <Box sx={{ mb: 3 }}>
+            {/* Message Input and Buttons */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField
                 label="Your Message"
+                variant="outlined"
                 fullWidth
                 multiline
                 maxRows={4}
@@ -209,94 +274,40 @@ function ChatApp() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 InputLabelProps={{ style: { color: '#ffffff' } }}
-                InputProps={{ style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' } }}
+                InputProps={{
+                  style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' },
+                }}
+                sx={{ flexGrow: 1 }}
               />
-            </Box>
-
-            {/* Send and Clear Buttons */}
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={sendMessage} 
-              fullWidth 
-              sx={{ mb: 2 }}
-              disabled={loading} // Disable button when loading
-            >
-              {loading ? "Sending..." : "Send"} {/* Change button text based on loading state */}
-            </Button>
-            <Button variant="outlined" color="secondary" onClick={() => setConversation([])} fullWidth sx={{ mb: 2 }}>
-              Clear Conversation
-            </Button>
-
-            {/* Settings Button */}
-            <Box sx={{ position: 'relative', mt: 2 }}>
-              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary">
-                {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
+              <IconButton
+                color="primary"
+                onClick={sendMessage}
+                disabled={loading}
+                sx={{ p: 1 }}
+                aria-label="send"
+              >
+                <SendIcon />
               </IconButton>
-              {settingsOpen && (
-                <Box sx={{ mt: 2 }}>
-                  {/* System Prompt */}
-                  <Box sx={{ mb: 3 }}>
-                    <TextField
-                      label="System Prompt"
-                      multiline
-                      rows={3}
-                      fullWidth
-                      value={systemPrompt}
-                      onChange={(e) => setSystemPrompt(e.target.value)}
-                      sx={{ my: 1 }}
-                      InputLabelProps={{ style: { color: '#ffffff' } }}
-                      InputProps={{ style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' } }}
-                    />
-                  </Box>
-
-                  {/* Model Selection */}
-                  <Box sx={{ mb: 3 }}>
-                    <FormControl fullWidth>
-                      <InputLabel id="model-select-label" sx={{ color: '#ffffff' }}>Model</InputLabel>
-                      <Select
-                        labelId="model-select-label"
-                        value={model}
-                        label="Model"
-                        onChange={(e) => setModel(e.target.value)}
-                        sx={{ color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' }}
-                      >
-                        <MenuItem value="gpt-4o">gpt-4o</MenuItem>
-                        <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
-                        <MenuItem value="o1-mini">o1-mini</MenuItem>
-                        <MenuItem value="o1-preview">o1-preview</MenuItem>
-                        <MenuItem value="dalle-3">DALL-E 3</MenuItem> {/* Add DALL-E 3 option */}
-                      </Select>
-                    </FormControl>
-                  </Box>
-
-                  {/* Temperature Slider */}
-                  <Box sx={{ mb: 3 }}>
-                    <Typography gutterBottom color="secondary">Temperature: {temperature}</Typography>
-                    <Slider
-                      min={0}
-                      max={1}
-                      step={0.1}
-                      value={temperature}
-                      onChange={(e, val) => setTemperature(val)}
-                      sx={{
-                        color: '#FFD700', // Gold color for slider
-                      }}
-                    />
-                  </Box>
-                </Box>
-              )}
+              <IconButton
+                color="secondary"
+                onClick={() => setConversation([])}
+                disabled={loading}
+                sx={{ p: 1 }}
+                aria-label="clear"
+              >
+                <ClearIcon />
+              </IconButton>
             </Box>
 
             {/* Error Message */}
             {error && (
-              <Typography color="error" sx={{ mt: 2 }}>
+              <Typography color="error" sx={{ mt: 1 }}>
                 Error: {error}
               </Typography>
             )}
 
             {/* Footer */}
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
               *This application can produce incorrect responses.
             </Typography>
           </Paper>
