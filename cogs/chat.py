@@ -3,15 +3,24 @@ import os
 import json
 from flask import Blueprint, request, jsonify, session
 import openai
-from openai import OpenAI
+import copy
+# Remove incorrect import
+# from openai import OpenAI
 
 from .web_search import WebSearchCog
 
 class ChatBlueprint:
     def __init__(self, app_instance):
         self.bp = Blueprint("chat_blueprint", __name__)
-        self.client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
-        self.web_search_cog = WebSearchCog()
+        
+        # Initialize OpenAI client properly
+        # The standard OpenAI library does not have an OpenAI class; instead, set the API key
+        openai.api_key = os.getenv('OPENAI_KEY')
+        self.client = openai  # Assign the openai module as the client
+
+        # Pass the OpenAI client to WebSearchCog
+        self.web_search_cog = WebSearchCog(openai_client=self.client)
+        
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
         self.add_routes()
@@ -21,7 +30,7 @@ class ChatBlueprint:
         def chat():
             data = request.get_json()
             user_message = data.get("message", "")
-            model = data.get("model", "gpt-4o")
+            model = data.get("model", "gpt-4")
             temperature = data.get("temperature", 0.7)
             system_prompt = data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
 
@@ -35,7 +44,8 @@ class ChatBlueprint:
 
             # Append user message to conversation history
             conversation.append({"role": "user", "content": user_message})
-            session['conversation_history'] = conversation
+            temp_conversation = copy.deepcopy(conversation)
+            # session['conversation_history'] = conversation
 
             # Analyze user intent
             intent = self.analyze_user_intent(user_message, conversation)
@@ -57,25 +67,35 @@ class ChatBlueprint:
                         session['conversation_history'] = conversation
                     else:
                         assistant_reply = "No image prompt provided."
+                    return jsonify({
+                        "user_message": user_message,
+                        "assistant_reply": assistant_reply,
+                        "conversation_history": conversation
+                    })
+
                 elif intent.get("code_intent", False):
                     # Handle code-related intents (Placeholder)
 
-                    assistant_reply = "Sure, I can help you with code-related queries."
-                    conversation.append({"role": "assistant", "content": assistant_reply})
-                    session['conversation_history'] = conversation
+                    code_info = "Sure, I can help you with code-related queries."
+                    temp_conversation[0]['content'] += code_info
+                    temp_conversation[-1]['content'] += '\n\nYou have been supplimented with information from your code base to answer this query.'
+
                 elif intent.get("internet_search", False):
                     # Handle internet search (Placeholder)
                     # Perform web search
                     query = user_message  # Or extract a specific part of the message
                     search_content = self.web_search_cog.web_search(query)
-                    assistant_reply = search_content
-                    conversation.append({"role": "assistant", "content": assistant_reply})
-                    session['conversation_history'] = conversation
+                    search_content = f'\n\nThe following is information from the internet to help with your answer: {search_content}'
+
+                    temp_conversation[0]['content'] += search_content
+                    temp_conversation[-1]['content'] += '\n\nYou have been supplimented with information from the internent to answer this query.'
                 else:
-                    # Regular Chat Response
-                    assistant_reply = self.generate_chat_response(conversation, model, temperature)
-                    conversation.append({"role": "assistant", "content": assistant_reply})
-                    session['conversation_history'] = conversation
+                    temp_conversation = conversation
+
+                # Regular Chat Response
+                assistant_reply = self.generate_chat_response(temp_conversation, model, temperature)
+                conversation.append({"role": "assistant", "content": assistant_reply})
+                session['conversation_history'] = conversation
 
                 return jsonify({
                     "user_message": user_message,
@@ -119,7 +139,7 @@ class ChatBlueprint:
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4",  # Correct model name
                 messages=analysis_prompt,
                 max_tokens=300,
                 temperature=0
@@ -166,7 +186,7 @@ class ChatBlueprint:
             response = self.client.chat.completions.create(
                 model=model,
                 messages=conversation,
-                # max_tokens=max_tokens,
+                # max_tokens=max_tokens,  # You might want to set this based on requirements
                 temperature=temperature
             )
             assistant_reply = response.choices[0].message.content

@@ -3,18 +3,65 @@ import os
 import json
 import requests
 import validators
+
+# Remove direct import of openai
+# from utils.fetch_page_content import fetch_page_content  # Ensure this is synchronous
+
 from utils.fetch_page_content import fetch_page_content  # Ensure this is synchronous
 
 class WebSearchCog:
-    def __init__(self):
+    def __init__(self, openai_client):
+        """
+        Initialize WebSearchCog with an existing OpenAI client.
+
+        :param openai_client: An instance of the OpenAI client to use for generating search terms.
+        """
+        self.openai_client = openai_client
         self.search_api_key = os.getenv('GOOGLE_API_KEY')
         self.search_engine_id = os.getenv('SEARCH_ENGINE_ID')
         self.search_url = "https://www.googleapis.com/customsearch/v1"
 
+    def generate_search_terms(self, user_input):
+        """
+        Use the provided OpenAI client to generate optimized search terms from user input.
+        """
+        prompt = (
+            "You are an assistant that helps generate effective Google search queries.\n"
+            f"User Input: {user_input}\n"
+            "Generate a list of concise and relevant search terms based on the above input."
+        )
+
+        try:
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4",  # Specify the desired model
+                messages=[
+                    {"role": "system", "content": "You are ChatGPT, a large language model trained by OpenAI."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=60,
+                n=1,
+                stop=None,
+                temperature=0.7,
+            )
+            # Extract the generated search terms
+            search_terms = response.choices[0].message['content'].strip()
+            # Optionally, parse the search terms if they're in a list format
+            # For simplicity, assume the LLM returns a comma-separated string
+            optimized_query = search_terms.split('\n')[0]  # Take the first line
+            return optimized_query
+        except Exception as e:
+            print(f"Error generating search terms with LLM: {e}")
+            # Fallback to original query if LLM fails
+            return user_input
+
     def web_search(self, query):
         """Perform a web search using the Google Custom Search API."""
-        if validators.url(query):
-            content = fetch_page_content(query)
+        # First, generate optimized search terms using the LLM
+        optimized_query = self.generate_search_terms(query)
+        print(f"Optimized Query: {optimized_query}")
+
+        if validators.url(optimized_query):
+            content = fetch_page_content(optimized_query)
             if content:
                 return content[:3000]  # Limit content length
             else:
@@ -23,7 +70,7 @@ class WebSearchCog:
             params = {
                 "key": self.search_api_key,
                 "cx": self.search_engine_id,
-                "q": query,
+                "q": optimized_query,
             }
 
             try:
