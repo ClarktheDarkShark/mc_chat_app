@@ -104,7 +104,7 @@ function ChatApp() {
           <Paper elevation={6} sx={{ p: 4, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             {/* In-App Header */}
             <Typography variant="h4" gutterBottom color="primary">
-              USMC Demo Agent
+              USMC AI Agent DEMO
             </Typography>
 
             {/* Conversation Box at the Top */}

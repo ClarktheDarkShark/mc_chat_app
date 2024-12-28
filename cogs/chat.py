@@ -134,7 +134,7 @@ class ChatBlueprint:
     def generate_image(self, prompt):
         """Generate an image using OpenAI's DALL-E 3 and return the image URL."""
         try:
-            image_response = openai.Image.create(
+            image_response = self.client.images.generate(
                 model="dall-e-3",
                 prompt=prompt,
                 size="1024x1024",
