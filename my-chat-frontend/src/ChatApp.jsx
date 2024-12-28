@@ -129,7 +129,7 @@ function ChatApp() {
                         >
                           {msg.role === "assistant" && msg.content.startsWith("![Generated Image](") ? (
                             <img
-                              src={msg.content.slice(18, -1)} // Extract URL from markdown
+                              src={msg.content.slice(19, -1)} // Extract URL from markdown
                               alt="Generated"
                               style={{ maxWidth: '100%', borderRadius: '8px' }}
                             />
