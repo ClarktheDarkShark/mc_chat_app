@@ -1,15 +1,11 @@
 // src/ChatApp.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { Fade, IconButton, createTheme, ThemeProvider } from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import CloseIcon from '@mui/icons-material/Close';
-import SendIcon from '@mui/icons-material/Send';
-import ClearIcon from '@mui/icons-material/Clear';
-
-import {
-  TextField,
-  Container,
-  Typography,
+import { 
+  createTheme, 
+  ThemeProvider, 
+  IconButton, 
+  Container, 
+  Typography, 
   Box,
   Slider,
   FormControl,
@@ -18,12 +14,17 @@ import {
   MenuItem,
   Paper,
   CircularProgress,
-} from "@mui/material";
+  TextField
+} from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import CloseIcon from '@mui/icons-material/Close';
+import SendIcon from '@mui/icons-material/Send';
+import ClearIcon from '@mui/icons-material/Clear';
 
-// Import react-markdown
+// 1) Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
 
-// Error Boundary Component
+// 2) Minimal Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -46,22 +47,21 @@ class ErrorBoundary extends React.Component {
         </Typography>
       );
     }
-
-    return this.props.children; 
+    return this.props.children;
   }
 }
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#AF002A' }, // USMC Scarlet
-    secondary: { main: '#FFD700' }, // Gold
+    primary: { main: '#AF002A' },
+    secondary: { main: '#FFD700' },
     background: {
-      default: '#000000', // Black Background
-      paper: '#1a1a1a',    // Dark Paper Background
+      default: '#000000',
+      paper: '#1a1a1a',
     },
     text: {
-      primary: '#ffffff', // White text for contrast
-      secondary: '#FFD700', // Gold text if needed
+      primary: '#ffffff',
+      secondary: '#FFD700',
     },
   },
 });
@@ -76,39 +76,45 @@ function ChatApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Ref for the conversation box
+  // Ref for auto-scroll
   const conversationRef = useRef(null);
-
-  // Auto-scroll effect for the conversation box
   useEffect(() => {
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversation]);
 
+  // 3) Send message logic
   const sendMessage = async () => {
     setError("");
-
     if (!message.trim()) {
       setError("Please enter a message first.");
       return;
     }
 
-    // Create a new message object for the user
-    const userMessage = { role: "user", content: message.trim(), id: Date.now() };
+    // Create user message
+    const userMessage = {
+      role: "user",
+      content: message.trim(),
+      id: Date.now(),      // unique key
+    };
 
-    // Create a placeholder for the assistant's response
-    const assistantPlaceholder = { role: "assistant", content: "Assistant is typing...", loading: true, id: Date.now() + 1 };
+    // Placeholder for assistant
+    const assistantPlaceholder = {
+      role: "assistant",
+      content: "Assistant is typing...",
+      loading: true,
+      id: Date.now() + 1, // unique key
+    };
 
-    // Update the conversation optimistically
+    // Update conversation optimistically
     setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
-
-    // Clear the input field and set loading
     setMessage("");
     setLoading(true);
 
+    // Prepare payload
     const payload = {
-      message: message.trim(),
+      message: userMessage.content,
       model,
       system_prompt: systemPrompt.trim(),
       temperature,
@@ -123,31 +129,45 @@ function ChatApp() {
       const data = await res.json();
 
       if (data.error) {
+        // Replace placeholder with error
         setError(data.error);
-        // Replace the placeholder with the error message
         setConversation((prev) => {
           const updated = [...prev];
-          updated.pop(); // Remove the placeholder
-          updated.push({ role: "assistant", content: `Error: ${data.error}`, loading: false, id: Date.now() + 2 });
+          updated.pop();
+          updated.push({
+            role: "assistant",
+            content: `Error: ${data.error}`,
+            loading: false,
+            id: Date.now() + 2,
+          });
           return updated;
         });
       } else {
-        // Replace the placeholder with the assistant's actual reply
+        // Replace placeholder with final assistant message
         setConversation((prev) => {
           const updated = [...prev];
-          updated.pop(); // Remove the placeholder
-          updated.push({ role: "assistant", content: data.assistant_reply, loading: false, id: Date.now() + 3 });
+          updated.pop();
+          updated.push({
+            role: "assistant",
+            content: data.assistant_reply || "No response.",
+            loading: false,
+            id: Date.now() + 3,
+          });
           return updated;
         });
       }
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Check the console.");
-      // Replace the placeholder with the error message
       setConversation((prev) => {
         const updated = [...prev];
-        updated.pop(); // Remove the placeholder
-        updated.push({ role: "assistant", content: "Error: Something went wrong.", loading: false, id: Date.now() + 4 });
+        updated.pop();
+        updated.push({
+          role: "assistant",
+          content: "Error: Something went wrong.",
+          loading: false,
+          id: Date.now() + 4,
+        });
         return updated;
       });
     } finally {
@@ -155,8 +175,9 @@ function ChatApp() {
     }
   };
 
+  // 4) Handle Enter key in multiline TextField
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -168,40 +189,39 @@ function ChatApp() {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          p: { xs: 1, sm: 2 },       // Responsive padding
+          p: { xs: 1, sm: 2 },
           display: 'flex',
           flexDirection: 'column-reverse',
           justifyContent: 'flex-start',
-          // Remove any border
           border: 'none',
         }}
       >
+        {/* 5) Container Setup */}
         <Container
           maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }}
           sx={{
-            mb: { xs: 2, sm: 4 },     // Adjust spacing for mobile vs. desktop
+            mb: { xs: 2, sm: 4 },
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
             height: { xs: 'auto', sm: '80%' },
-            // Remove any border
             border: 'none',
           }}
         >
           <Paper
             elevation={6}
             sx={{
-              p: { xs: 1, sm: 2 },    // Less padding on mobile
+              p: { xs: 1, sm: 2 },
               borderRadius: 3,
-              maxWidth: '100%',         // Use full width up to maxWidth
+              maxWidth: '100%',
               margin: '0 auto',
               backgroundColor: 'background.paper',
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
-              boxShadow: 'none',        // Remove any default shadow if causing borders
-              border: 'none',           // Ensure no border
+              boxShadow: 'none',
+              border: 'none',
             }}
           >
             {/* Header */}
@@ -217,7 +237,6 @@ function ChatApp() {
             {/* Settings Panel */}
             {settingsOpen && (
               <Box sx={{ mb: 3 }}>
-                {/* System Prompt */}
                 <Box sx={{ mb: 2 }}>
                   <TextField
                     label="System Prompt"
@@ -232,7 +251,6 @@ function ChatApp() {
                   />
                 </Box>
 
-                {/* Model Selection */}
                 <Box sx={{ mb: 2 }}>
                   <FormControl fullWidth>
                     <InputLabel id="model-select-label" sx={{ color: '#ffffff' }}>Model</InputLabel>
@@ -252,7 +270,6 @@ function ChatApp() {
                   </FormControl>
                 </Box>
 
-                {/* Temperature Slider */}
                 <Box sx={{ mb: 2 }}>
                   <Typography gutterBottom color="secondary" variant="body2">
                     Temperature: {temperature}
@@ -276,22 +293,23 @@ function ChatApp() {
                 sx={{
                   flexGrow: 1,
                   overflowY: 'auto',
-                  maxHeight: { xs: '50vh', sm: '70vh' }, // Adjusted for mobile and larger screens
+                  maxHeight: { xs: '50vh', sm: '70vh' },
                   mb: 1,
                   pr: { xs: 0, sm: 1 },
                 }}
               >
+                {/* 6) Render each message as a simple Box (no <Fade> or <List>) */}
                 {conversation.map((msg) => {
-                  const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
-                  const isAssistant = msg.role === "assistant";
-
-                  // Log message content for debugging
                   console.log(`Rendering message ${msg.id}:`, msg.content);
 
-                  let renderedContent;
+                  const isImage =
+                    msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
+                  const isAssistant = msg.role === "assistant";
+
+                  let contentToRender;
 
                   if (msg.loading) {
-                    renderedContent = (
+                    contentToRender = (
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <CircularProgress size={20} color="secondary" />
                         <Typography variant="body2" sx={{ ml: 1 }}>
@@ -300,12 +318,12 @@ function ChatApp() {
                       </Box>
                     );
                   } else if (isImage) {
-                    // Safely extract the image URL using regex
+                    // Use regex to safely parse the image URL
                     const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
                     const imageUrl = match ? match[1] : null;
 
                     if (imageUrl) {
-                      renderedContent = (
+                      contentToRender = (
                         <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
                           <img
                             src={imageUrl}
@@ -315,20 +333,20 @@ function ChatApp() {
                         </Box>
                       );
                     } else {
-                      renderedContent = (
+                      contentToRender = (
                         <Typography variant="body1" color="error">
                           Invalid image URL.
                         </Typography>
                       );
                     }
                   } else if (isAssistant) {
-                    renderedContent = (
+                    contentToRender = (
                       <ReactMarkdown>
                         {msg.content || "**(No content available)**"}
                       </ReactMarkdown>
                     );
                   } else {
-                    renderedContent = (
+                    contentToRender = (
                       <Typography variant="body1">
                         {msg.content || "No response available."}
                       </Typography>
@@ -336,29 +354,28 @@ function ChatApp() {
                   }
 
                   return (
-                    <Fade in={true} timeout={500} key={msg.id}>
-                      <Box
-                        sx={{
-                          backgroundColor: isImage
-                            ? 'transparent'
-                            : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
-                          color: 'white',
-                          borderRadius: 2,
-                          p: isImage ? 0 : 1,
-                          maxWidth: '80%',
-                          ml: msg.role === "user" ? 'auto' : 0,
-                          mb: 1,
-                        }}
-                      >
-                        {renderedContent}
-                      </Box>
-                    </Fade>
+                    <Box
+                      key={msg.id}
+                      sx={{
+                        backgroundColor: isImage
+                          ? 'transparent'
+                          : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+                        color: 'white',
+                        borderRadius: 2,
+                        p: isImage ? 0 : 1,
+                        maxWidth: '80%',
+                        ml: msg.role === "user" ? 'auto' : 0,
+                        mb: 1,
+                      }}
+                    >
+                      {contentToRender}
+                    </Box>
                   );
                 })}
               </Box>
             </ErrorBoundary>
 
-            {/* Message Input and Buttons */}
+            {/* Message Input */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField
                 label="Your Message"
@@ -395,7 +412,7 @@ function ChatApp() {
               </IconButton>
             </Box>
 
-            {/* Error Message */}
+            {/* Error Display */}
             {error && (
               <Typography color="error" sx={{ mt: 1 }}>
                 Error: {error}
