@@ -144,7 +144,7 @@ function ChatApp() {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          padding: 2,
+          padding: 0,
           display: 'flex',
           flexDirection: 'column-reverse', // Start content at the bottom
           justifyContent: 'flex-start',
