@@ -33,7 +33,7 @@ class WebSearchCog:
         Use the provided OpenAI client to generate optimized search terms from user input.
         """
         prompt = (
-            f"Prepare key search terms for a Google internet search based on the user input and conversation history. This should be extremely short and useful in an internet search. The current date, if relevent, is {current_date}. Rarely include the date, only when absolutely essetial."
+            f"Prepare key search terms for a Google internet search based on the user input and conversation history. This should be extremely short and useful in an internet search. The current date, if relevent, is {current_date}. Rarely include the date, only when absolutely essetial. Do not include the date if 'recent' is included."
         )
 
         try:
@@ -62,7 +62,7 @@ class WebSearchCog:
     def web_search(self, query):
         """Perform a web search using the Google Custom Search API."""
         # First, generate optimized search terms using the LLM
-        optimized_query = self.generate_search_terms(query)
+        optimized_query = self.generate_search_terms(history)
         print(f"Query: {query}\n")
         print(f"Optimized Query: {optimized_query}")
 
