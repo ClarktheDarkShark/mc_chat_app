@@ -3,11 +3,18 @@ import os
 import json
 import requests
 import validators
+import pytz
+from datetime import datetime, timedelta
+from datetime import time as dt_time
 
 # Remove direct import of openai
 # from utils.fetch_page_content import fetch_page_content  # Ensure this is synchronous
 
 from utils.fetch_page_content import fetch_page_content  # Ensure this is synchronous
+
+est = pytz.timezone('America/New_York')
+current_date = datetime.now(est).strftime("%Y-%m-%d")
+current_time = datetime.now(est)
 
 class WebSearchCog:
     def __init__(self, openai_client):
@@ -26,7 +33,7 @@ class WebSearchCog:
         Use the provided OpenAI client to generate optimized search terms from user input.
         """
         prompt = (
-            "You are an assistant that helps generate effective Google search queries. Translate the user input into effective Google search terms to provide the best results."
+            f"You are an assistant that helps generate effective Google search queries. Translate the user input into effective Google search terms to provide the best results. Respond only with the google search terms, no preface. The current date, if relevent, is {current_date}"
         )
 
         try:
