@@ -25,6 +25,30 @@ import {
 // 1) Install and Import react-markdown
 import ReactMarkdown from 'react-markdown';
 
+// 2) Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught by ErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <Typography color="error">Something went wrong while rendering the messages.</Typography>;
+    }
+
+    return this.props.children; 
+  }
+}
+
 const theme = createTheme({
   palette: {
     primary: { main: '#AF002A' }, // USMC Scarlet
@@ -101,7 +125,7 @@ function ChatApp() {
         // Replace the placeholder with the error message
         setConversation((prev) => {
           const updated = [...prev];
-          updated.pop();
+          updated.pop(); // Remove the placeholder
           updated.push({ role: "assistant", content: `Error: ${data.error}`, loading: false });
           return updated;
         });
@@ -109,7 +133,7 @@ function ChatApp() {
         // Replace the placeholder with the assistant's actual reply
         setConversation((prev) => {
           const updated = [...prev];
-          updated.pop();
+          updated.pop(); // Remove the placeholder
           updated.push({ role: "assistant", content: data.assistant_reply, loading: false });
           return updated;
         });
@@ -120,7 +144,7 @@ function ChatApp() {
       // Replace the placeholder with the error message
       setConversation((prev) => {
         const updated = [...prev];
-        updated.pop();
+        updated.pop(); // Remove the placeholder
         updated.push({ role: "assistant", content: "Error: Something went wrong.", loading: false });
         return updated;
       });
@@ -160,7 +184,7 @@ function ChatApp() {
           }}
         >
           <Paper
-            elevation={0}
+            elevation={6}
             sx={{
               p: { xs: 1, sm: 2 },    // Less padding on mobile
               borderRadius: 3,
@@ -170,6 +194,7 @@ function ChatApp() {
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
+              boxShadow: 'none',        // Remove any default shadow if causing borders
             }}
           >
             {/* Header */}
@@ -238,62 +263,68 @@ function ChatApp() {
             )}
 
             {/* Conversation Box */}
-            <Box
-              ref={conversationRef}
-              sx={{
-                flexGrow: 1,                  // Allow conversation to grow
-                overflowY: 'auto',
-                maxHeight: { xs: '50vh', sm: '70vh' },
-                mb: 1,
-              }}
-            >
-              {conversation.map((msg, index) => {
-                const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
-                const isAssistant = msg.role === "assistant";
+            <ErrorBoundary>
+              <Box
+                ref={conversationRef}
+                sx={{
+                  flexGrow: 1,
+                  overflowY: 'auto',
+                  maxHeight: { xs: '50vh', sm: '70vh' },
+                  mb: 1,
+                  pr: { xs: 0, sm: 1 },
+                }}
+              >
+                <List>
+                  {conversation.map((msg, index) => {
+                    const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
+                    const isAssistant = msg.role === "assistant";
 
-                return (
-                  <Fade in={true} timeout={500} key={index}>
-                    <ListItem sx={{ display: 'block' }}>
-                      <Box
-                        sx={{
-                          backgroundColor: isImage
-                            ? 'transparent'
-                            : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
-                          color: 'white',
-                          borderRadius: 2,
-                          p: isImage ? 0 : 1,
-                          maxWidth: '80%',
-                          ml: msg.role === "user" ? 'auto' : 0,
-                          mb: 1,
-                        }}
-                      >
-                        {/* 2) Render Markdown if from assistant (or you can do it for all messages) */}
-                        {msg.loading ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <CircularProgress size={20} color="secondary" />
-                            <Typography variant="body2" sx={{ ml: 1 }}>
-                              Assistant is typing...
-                            </Typography>
+                    return (
+                      <Fade in={true} timeout={500} key={index}>
+                        <ListItem sx={{ display: 'block' }}>
+                          <Box
+                            sx={{
+                              backgroundColor: isImage
+                                ? 'transparent'
+                                : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+                              color: 'white',
+                              borderRadius: 2,
+                              p: isImage ? 0 : 1,
+                              maxWidth: '80%',
+                              ml: msg.role === "user" ? 'auto' : 0,
+                              mb: 1,
+                            }}
+                          >
+                            {msg.loading ? (
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CircularProgress size={20} color="secondary" />
+                                <Typography variant="body2" sx={{ ml: 1 }}>
+                                  Assistant is typing...
+                                </Typography>
+                              </Box>
+                            ) : isImage ? (
+                              <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+                                <img
+                                  src={msg.content.slice(19, -1)}
+                                  alt="Generated"
+                                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                                />
+                              </Box>
+                            ) : isAssistant ? (
+                              <ReactMarkdown>
+                                {msg.content || "**(No content available)**"}
+                              </ReactMarkdown>
+                            ) : (
+                              <Typography variant="body1">{msg.content || "No response available."}</Typography>
+                            )}
                           </Box>
-                        ) : isImage ? (
-                          <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
-                            <img
-                              src={msg.content.slice(19, -1)}
-                              alt="Generated"
-                              style={{ width: '100%', height: 'auto', display: 'block' }}
-                            />
-                          </Box>
-                        ) : isAssistant ? (
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        ) : (
-                          <Typography variant="body1">{msg.content}</Typography>
-                        )}
-                      </Box>
-                    </ListItem>
-                  </Fade>
-                );
-              })}
-            </Box>
+                        </ListItem>
+                      </Fade>
+                    );
+                  })}
+                </List>
+              </Box>
+            </ErrorBoundary>
 
             {/* Message Input and Buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
