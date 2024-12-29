@@ -35,12 +35,10 @@ class ChatBlueprint:
             model = data.get("model", "gpt-4")
             temperature = data.get("temperature", 0.7)
             system_prompt = data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
-            additional_instructions = 
-            '''You are an AI assistant that generates structured and easy-to-read responses.  
+            additional_instructions = '''You are an AI assistant that generates structured and easy-to-read responses.  
                 When explaining code, break down the explanation into clear sections using markdown.  
                 Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  
-                Ensure sufficient line breaks between sections to improve readability.  
-            '''
+                Ensure sufficient line breaks between sections to improve readability.  '''
 
             if not user_message:
                 return jsonify({"error": "No message provided"}), 400
