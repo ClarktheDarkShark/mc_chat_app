@@ -22,10 +22,10 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-// Import react-markdown
+// Import react-markdown for Markdown rendering
 import ReactMarkdown from 'react-markdown';
 
-// Error Boundary Component
+// Error Boundary Component to Catch Rendering Errors
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -53,6 +53,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// Define MUI Theme
 const theme = createTheme({
   palette: {
     primary: { main: '#AF002A' }, // USMC Scarlet
@@ -78,16 +79,17 @@ function ChatApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Ref for the conversation box
+  // Ref for the conversation box to enable auto-scrolling
   const conversationRef = useRef(null);
 
-  // Auto-scroll effect for the conversation box
+  // Auto-scroll to the bottom when new messages are added
   useEffect(() => {
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversation]);
 
+  // Function to send a message
   const sendMessage = async () => {
     setError("");
 
@@ -105,7 +107,7 @@ function ChatApp() {
     // Update the conversation optimistically
     setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
 
-    // Clear the input field and set loading
+    // Clear the input field and set loading to true
     setMessage("");
     setLoading(true);
 
@@ -157,6 +159,7 @@ function ChatApp() {
     }
   };
 
+  // Handle pressing Enter to send message
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -179,7 +182,7 @@ function ChatApp() {
         }}
       >
         <Container
-          maxWidth={{ xs: 'xs', sm: 'md' }}
+          maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }} // Expanded maxWidth for larger screens
           sx={{
             mb: { xs: 2, sm: 4 },     // Adjust spacing for mobile vs. desktop
             flexGrow: 1,
@@ -196,7 +199,7 @@ function ChatApp() {
             sx={{
               p: { xs: 1, sm: 2 },    // Less padding on mobile
               borderRadius: 3,
-              maxWidth: '800px',
+              maxWidth: { xs: '100%', sm: '800px', lg: '1000px' }, // Adjust maxWidth based on screen size
               margin: '0 auto',
               backgroundColor: 'background.paper',
               display: 'flex',
@@ -211,7 +214,7 @@ function ChatApp() {
               <Typography variant={{ xs: 'h6', sm: 'h5', md: 'h4' }} color="primary">
                 USMC Agent Demo
               </Typography>
-              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
+              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small" aria-label="settings">
                 {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
               </IconButton>
             </Box>
@@ -288,6 +291,9 @@ function ChatApp() {
                     const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
                     const isAssistant = msg.role === "assistant";
 
+                    // Generate a unique key for each message
+                    const uniqueKey = `${msg.role}-${index}-${msg.content.slice(0, 10)}`;
+
                     // Log message content for debugging
                     console.log(`Rendering message ${index}:`, msg.content);
 
@@ -339,7 +345,7 @@ function ChatApp() {
                     }
 
                     return (
-                      <Fade in={true} timeout={500} key={index}>
+                      <Fade in={true} timeout={500} key={uniqueKey}>
                         <ListItem sx={{ display: 'block' }}>
                           <Box
                             sx={{
