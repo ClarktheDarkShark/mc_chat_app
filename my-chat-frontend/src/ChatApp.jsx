@@ -1,11 +1,15 @@
 // src/ChatApp.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  createTheme, 
-  ThemeProvider, 
-  IconButton, 
-  Container, 
-  Typography, 
+import { Fade, IconButton, createTheme, ThemeProvider } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import CloseIcon from '@mui/icons-material/Close';
+import SendIcon from '@mui/icons-material/Send';
+import ClearIcon from '@mui/icons-material/Clear';
+
+import {
+  TextField,
+  Container,
+  Typography,
   Box,
   Slider,
   FormControl,
@@ -13,55 +17,26 @@ import {
   Select,
   MenuItem,
   Paper,
+  List,
+  ListItem,
   CircularProgress,
-  TextField
-} from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import CloseIcon from '@mui/icons-material/Close';
-import SendIcon from '@mui/icons-material/Send';
-import ClearIcon from '@mui/icons-material/Clear';
-
-// 1) Import react-markdown for assistant message rendering
-import ReactMarkdown from 'react-markdown';
-
-// 2) Minimal Error Boundary to catch rendering errors
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error: error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("Error caught by ErrorBoundary:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <Typography color="error">
-          Something went wrong while rendering the messages: {this.state.error.toString()}
-        </Typography>
-      );
-    }
-    return this.props.children;
-  }
-}
+} from "@mui/material";
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#AF002A' },
-    secondary: { main: '#FFD700' },
+    primary: {
+      main: '#AF002A', // USMC Scarlet
+    },
+    secondary: {
+      main: '#FFD700', // Gold
+    },
     background: {
-      default: '#000000',
-      paper: '#1a1a1a',
+      default: '#000000', // Black Background
+      paper: '#1a1a1a',    // Dark Paper Background for contrast
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#FFD700',
+      primary: '#ffffff', // White text for contrast
+      secondary: '#FFD700', // Gold text if needed
     },
   },
 });
@@ -76,45 +51,39 @@ function ChatApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Ref for auto-scroll
+  // Ref for the conversation box
   const conversationRef = useRef(null);
+
+  // Auto-scroll effect for the conversation box
   useEffect(() => {
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversation]);
 
-  // 3) Send message logic
   const sendMessage = async () => {
     setError("");
+
     if (!message.trim()) {
       setError("Please enter a message first.");
       return;
     }
 
-    // Create user message
-    const userMessage = {
-      role: "user",
-      content: message.trim(),
-      id: Date.now(),      // unique key
-    };
+    // Create a new message object for the user
+    const userMessage = { role: "user", content: message.trim() };
 
-    // Placeholder for assistant
-    const assistantPlaceholder = {
-      role: "assistant",
-      content: "Assistant is typing...",
-      loading: true,
-      id: Date.now() + 1, // unique key
-    };
+    // Create a placeholder for the assistant's response
+    const assistantPlaceholder = { role: "assistant", content: "Assistant is typing...", loading: true };
 
-    // Update conversation optimistically
+    // Update the conversation state optimistically
     setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
+
+    // Clear the input field and set loading to true
     setMessage("");
     setLoading(true);
 
-    // Prepare payload
     const payload = {
-      message: userMessage.content,
+      message: message.trim(),
       model,
       system_prompt: systemPrompt.trim(),
       temperature,
@@ -129,45 +98,31 @@ function ChatApp() {
       const data = await res.json();
 
       if (data.error) {
-        // Replace placeholder with error
         setError(data.error);
+        // Update the placeholder with the error message
         setConversation((prev) => {
           const updated = [...prev];
-          updated.pop();
-          updated.push({
-            role: "assistant",
-            content: `Error: ${data.error}`,
-            loading: false,
-            id: Date.now() + 2,
-          });
+          updated.pop(); // Remove the placeholder
+          updated.push({ role: "assistant", content: `Error: ${data.error}`, loading: false });
           return updated;
         });
       } else {
-        // Replace placeholder with final assistant message
+        // Replace the placeholder with the actual assistant reply
         setConversation((prev) => {
           const updated = [...prev];
-          updated.pop();
-          updated.push({
-            role: "assistant",
-            content: data.assistant_reply || "No response.",
-            loading: false,
-            id: Date.now() + 3,
-          });
+          updated.pop(); // Remove the placeholder
+          updated.push({ role: "assistant", content: data.assistant_reply, loading: false });
           return updated;
         });
       }
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Check the console.");
+      // Update the placeholder with the error message
       setConversation((prev) => {
         const updated = [...prev];
-        updated.pop();
-        updated.push({
-          role: "assistant",
-          content: "Error: Something went wrong.",
-          loading: false,
-          id: Date.now() + 4,
-        });
+        updated.pop(); // Remove the placeholder
+        updated.push({ role: "assistant", content: "Error: Something went wrong.", loading: false });
         return updated;
       });
     } finally {
@@ -175,9 +130,8 @@ function ChatApp() {
     }
   };
 
-  // 4) Handle Enter key in multiline TextField
   const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -185,48 +139,38 @@ function ChatApp() {
 
   return (
     <ThemeProvider theme={theme}>
+      {/* Apply global styles for the body with flex column-reverse */}
       <Box
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          p: { xs: 1, sm: 2 },
+          padding: 0,
           display: 'flex',
-          flexDirection: 'column-reverse',
+          flexDirection: 'column-reverse', // Start content at the bottom
           justifyContent: 'flex-start',
-          border: 'none',
         }}
       >
-        {/* 5) Container Setup */}
-        <Container
-          maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }}
+        <Container 
+          maxWidth="lg"  // Use larger maxWidth for laptop screens
           sx={{
-            mb: { xs: 2, sm: 4 },
-            flexGrow: 1,
+            mb: 4, 
+            flexGrow:1,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
-            height: { xs: 'auto', sm: '80%' },
-            border: 'none',
-          }}
-        >
-          <Paper
-            elevation={6}
-            sx={{
-              p: { xs: 1, sm: 2 },
-              borderRadius: 3,
-              maxWidth: '100%',
-              margin: '0 auto',
-              backgroundColor: 'background.paper',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              boxShadow: 'none',
-              border: 'none',
-            }}
-          >
-            {/* Header */}
+            height: '80%'
+          }}>
+          <Paper elevation={6} sx={{ 
+            p: 2, 
+            borderRadius: 3, 
+            width: '100%',  // Use full width
+            maxWidth: '1100px',  // Allow larger width on laptops
+            margin: '0 auto', 
+            backgroundColor: 'background.paper' 
+          }}>
+            {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant={{ xs: 'h6', sm: 'h5', md: 'h4' }} color="primary">
+              <Typography variant="h5" gutterBottom color="primary">
                 USMC Agent Demo
               </Typography>
               <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
@@ -237,6 +181,7 @@ function ChatApp() {
             {/* Settings Panel */}
             {settingsOpen && (
               <Box sx={{ mb: 3 }}>
+                {/* System Prompt */}
                 <Box sx={{ mb: 2 }}>
                   <TextField
                     label="System Prompt"
@@ -251,6 +196,7 @@ function ChatApp() {
                   />
                 </Box>
 
+                {/* Model Selection */}
                 <Box sx={{ mb: 2 }}>
                   <FormControl fullWidth>
                     <InputLabel id="model-select-label" sx={{ color: '#ffffff' }}>Model</InputLabel>
@@ -265,11 +211,12 @@ function ChatApp() {
                       <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
                       <MenuItem value="o1-mini">o1-mini</MenuItem>
                       <MenuItem value="o1-preview">o1-preview</MenuItem>
-                      <MenuItem value="dalle-3">DALL-E 3</MenuItem>
+                      <MenuItem value="dalle-3">DALL-E 3</MenuItem> {/* Add DALL-E 3 option */}
                     </Select>
                   </FormControl>
                 </Box>
 
+                {/* Temperature Slider */}
                 <Box sx={{ mb: 2 }}>
                   <Typography gutterBottom color="secondary" variant="body2">
                     Temperature: {temperature}
@@ -280,102 +227,74 @@ function ChatApp() {
                     step={0.1}
                     value={temperature}
                     onChange={(e, val) => setTemperature(val)}
-                    sx={{ color: '#FFD700' }}
+                    sx={{
+                      color: '#FFD700', // Gold color for slider
+                    }}
                   />
                 </Box>
               </Box>
             )}
 
             {/* Conversation Box */}
-            <ErrorBoundary>
+            {conversation.length > 0 && (
               <Box
                 ref={conversationRef}
                 sx={{
-                  flexGrow: 1,
+                  mb: 3,
+                  maxHeight: { xs: '600px', sm: '800px' }, // Adjusted for mobile and larger screens
                   overflowY: 'auto',
-                  maxHeight: { xs: '50vh', sm: '70vh' },
-                  mb: 1,
-                  pr: { xs: 0, sm: 1 },
+                  paddingRight: 0, // Optional: Add some padding for scrollbar
                 }}
               >
-                {/* 6) Render each message as a simple Box (no <Fade> or <List>) */}
-                {conversation.map((msg) => {
-                  console.log(`Rendering message ${msg.id}:`, msg.content);
+                <List>
+                  {conversation.map((msg, index) => {
+                    const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
 
-                  const isImage =
-                    msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
-                  const isAssistant = msg.role === "assistant";
-
-                  let contentToRender;
-
-                  if (msg.loading) {
-                    contentToRender = (
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <CircularProgress size={20} color="secondary" />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          Assistant is typing...
-                        </Typography>
-                      </Box>
+                    return (
+                      <Fade in={true} timeout={500} key={index}>
+                        <ListItem sx={{ display: 'block' }}>
+                          <Box
+                            sx={{
+                              backgroundColor: isImage
+                                ? 'transparent' // No background for images
+                                : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+                              color: 'white',
+                              borderRadius: 2,
+                              p: isImage ? 0 : 1, // No padding for images
+                              maxWidth: '80%',
+                              ml: msg.role === "user" ? 'auto' : 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {msg.role === "assistant" && msg.loading ? (
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CircularProgress size={20} color="secondary" />
+                                <Typography variant="body2" sx={{ ml: 1 }}>
+                                  Assistant is typing...
+                                </Typography>
+                              </Box>
+                            ) : isImage ? (
+                              <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+                                <img
+                                  src={msg.content.slice(19, -1)} // Corrected slice
+                                  alt="Generated"
+                                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                                />
+                              </Box>
+                            ) : (
+                              <Typography variant="body1">{msg.content}</Typography>
+                            )}
+                          </Box>
+                        </ListItem>
+                      </Fade>
                     );
-                  } else if (isImage) {
-                    // Use regex to safely parse the image URL
-                    const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
-                    const imageUrl = match ? match[1] : null;
-
-                    if (imageUrl) {
-                      contentToRender = (
-                        <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
-                          <img
-                            src={imageUrl}
-                            alt="Generated"
-                            style={{ width: '100%', height: 'auto', display: 'block' }}
-                          />
-                        </Box>
-                      );
-                    } else {
-                      contentToRender = (
-                        <Typography variant="body1" color="error">
-                          Invalid image URL.
-                        </Typography>
-                      );
-                    }
-                  } else if (isAssistant) {
-                    contentToRender = (
-                      <ReactMarkdown>
-                        {msg.content || "**(No content available)**"}
-                      </ReactMarkdown>
-                    );
-                  } else {
-                    contentToRender = (
-                      <Typography variant="body1">
-                        {msg.content || "No response available."}
-                      </Typography>
-                    );
-                  }
-
-                  return (
-                    <Box
-                      key={msg.id}
-                      sx={{
-                        backgroundColor: isImage
-                          ? 'transparent'
-                          : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
-                        color: 'white',
-                        borderRadius: 2,
-                        p: isImage ? 0 : 1,
-                        maxWidth: '80%',
-                        ml: msg.role === "user" ? 'auto' : 0,
-                        mb: 1,
-                      }}
-                    >
-                      {contentToRender}
-                    </Box>
-                  );
-                })}
+                  })}
+                </List>
               </Box>
-            </ErrorBoundary>
+            )}
 
-            {/* Message Input */}
+            {/* Message Input and Buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField
                 label="Your Message"
@@ -412,7 +331,7 @@ function ChatApp() {
               </IconButton>
             </Box>
 
-            {/* Error Display */}
+            {/* Error Message */}
             {error && (
               <Typography color="error" sx={{ mt: 1 }}>
                 Error: {error}
@@ -420,7 +339,7 @@ function ChatApp() {
             )}
 
             {/* Footer */}
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
               *This application can produce incorrect responses.
             </Typography>
           </Paper>
