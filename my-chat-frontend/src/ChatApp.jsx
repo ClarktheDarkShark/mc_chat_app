@@ -150,8 +150,17 @@ function ChatApp() {
           justifyContent: 'flex-start',
         }}
       >
-        <Container maxWidth="md" sx={{ mb: 4 }}> {/* Changed mt to mb for reversed layout */}
-          <Paper elevation={6} sx={{ p: 3, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
+        <Container 
+          maxWidth="md" 
+          sx={{
+            mb: 4, 
+            flexGrow:1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            height: '100%'
+          }}> {/* Changed mt to mb for reversed layout */}
+          <Paper elevation={6} sx={{ p: 2, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             
             {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
