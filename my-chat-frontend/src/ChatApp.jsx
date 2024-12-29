@@ -20,6 +20,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import ClearIcon from '@mui/icons-material/Clear';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 // 1) Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
@@ -340,11 +342,28 @@ function ChatApp() {
                       );
                     }
                   } else if (isAssistant) {
-                    contentToRender = (
-                      <ReactMarkdown>
-                        {msg.content || "**(No content available)**"}
-                      </ReactMarkdown>
-                    );
+                    try {
+                      contentToRender = (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]} // Add remark-gfm plugin
+                          rehypePlugins={[rehypeRaw]} // Add rehype-raw plugin
+                          components={{
+                            // Handle potentially unsafe elements if needed
+                            a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,
+                            img: ({ src, alt }) => <img src={src} alt={alt} style={{ maxWidth: '100%' }} />,
+                          }}
+                        >
+                          {msg.content || "**(No content available)**"}
+                        </ReactMarkdown>
+                      );
+                    } catch (markdownError) {
+                      console.error("Error rendering Markdown:", markdownError, msg.content);
+                      contentToRender = (
+                        <Typography variant="body1" color="error">
+                          Error rendering assistant message. Please check the console.
+                        </Typography>
+                      );
+                    }
                   } else {
                     contentToRender = (
                       <Typography variant="body1">
