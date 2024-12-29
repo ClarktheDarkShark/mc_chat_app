@@ -160,7 +160,7 @@ function ChatApp() {
           }}
         >
           <Paper
-            elevation={6}
+            elevation={0}
             sx={{
               p: { xs: 1, sm: 2 },    // Less padding on mobile
               borderRadius: 3,

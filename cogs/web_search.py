@@ -26,9 +26,7 @@ class WebSearchCog:
         Use the provided OpenAI client to generate optimized search terms from user input.
         """
         prompt = (
-            "You are an assistant that helps generate effective Google search queries.\n"
-
-            "Generate concise and relevant search terms based on the User input."
+            "You are an assistant that helps generate effective Google search queries. Translate the user input into effective Google search terms to provide the best results."
         )
 
         try:

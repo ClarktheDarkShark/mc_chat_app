@@ -117,6 +117,11 @@ class ChatBlueprint:
                 print('***************************************************************************************************************')
                 print()
                 assistant_reply = self.generate_chat_response(temp_conversation, model, temperature)
+                print()
+                print()
+                print('Final Response:', assistant_reply)
+                print()
+                print()
                 conversation.append({"role": "assistant", "content": assistant_reply})
                 session['conversation_history'] = conversation
 
