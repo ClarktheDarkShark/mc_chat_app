@@ -33,7 +33,7 @@ class WebSearchCog:
         Use the provided OpenAI client to generate optimized search terms from user input.
         """
         prompt = (
-            f"You are an assistant that helps generate effective Google search queries. Translate the user input into effective Google search terms to provide the best results. Respond only with the google search terms, no preface. The current date, if relevent, is {current_date}"
+            f"Prepare a short summary for an internet search based on the user input and conversation history. The current date, if relevent, is {current_date}. Rarely include the date, only when absolutely essetial."
         )
 
         try:
