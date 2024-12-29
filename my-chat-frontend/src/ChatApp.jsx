@@ -151,7 +151,7 @@ function ChatApp() {
         }}
       >
         <Container 
-          maxWidth="md" 
+          maxWidth="lg"  // Use larger maxWidth for laptop screens
           sx={{
             mb: 4, 
             flexGrow:1,
@@ -159,9 +159,15 @@ function ChatApp() {
             flexDirection: 'column',
             justifyContent: 'flex-end',
             height: '80%'
-          }}> {/* Changed mt to mb for reversed layout */}
-          <Paper elevation={6} sx={{ p: 2, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
-            
+          }}>
+          <Paper elevation={6} sx={{ 
+            p: 2, 
+            borderRadius: 3, 
+            width: '100%',  // Use full width
+            maxWidth: '1100px',  // Allow larger width on laptops
+            margin: '0 auto', 
+            backgroundColor: 'background.paper' 
+          }}>
             {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h5" gutterBottom color="primary">
