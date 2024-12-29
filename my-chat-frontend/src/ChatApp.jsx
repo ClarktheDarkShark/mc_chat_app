@@ -277,7 +277,6 @@ function ChatApp() {
                             )}
                           </Box>
                         </ListItem>
-
                       </Fade>
                     );
                   })}
