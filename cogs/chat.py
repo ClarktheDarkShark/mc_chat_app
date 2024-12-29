@@ -102,10 +102,11 @@ class ChatBlueprint:
                     # Perform web search
                     query = user_message  # Or extract a specific part of the message
                     search_content = self.web_search_cog.web_search(query)
-                    search_content = f'\n\nThe following is information from the internet to help with your answer: {search_content}\n\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this.'
+                    search_content = f'\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this. Only use the most relevent and accurate information that matches the User Query.'
+                    # search_content = f'\n\nThe following is information from the internet to help with your answer: {search_content}\n\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this.'
 
                     temp_conversation[0]['content'] += search_content
-                    temp_conversation[-1]['content'] += f'\n\nYou are being supplimented with information from the internent to answer this query.'
+                    temp_conversation[-1]['content'] = f'\n\nYou are being supplimented with the following information from the internent to answer user query. Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_input}***'
                 else:
                     temp_conversation = conversation
 

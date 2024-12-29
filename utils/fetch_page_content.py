@@ -13,6 +13,7 @@ def fetch_page_content(url):
         # Extract text from paragraphs
         paragraphs = soup.find_all('p')
         content = '\n'.join([para.get_text() for para in paragraphs])
+        
         return content
     except Exception as e:
         print(f"Exception while fetching page content from {url}: {e}")

@@ -27,8 +27,8 @@ class WebSearchCog:
         """
         prompt = (
             "You are an assistant that helps generate effective Google search queries.\n"
-            f"User Input: {user_input}\n"
-            "Generate a list of concise and relevant search terms based on the above input."
+
+            "Generate concise and relevant search terms based on the User input."
         )
 
         try:
@@ -36,12 +36,12 @@ class WebSearchCog:
                 model="gpt-4o-mini",  # Specify the desired model
                 messages=[
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": f"User Input: {user_input}\n"}
                 ],
                 max_tokens=60,
                 n=1,
                 stop=None,
-                temperature=0.7,
+                temperature=0.4,
             )
             # Extract the generated search terms
             search_terms = response.choices[0].message.content
@@ -104,7 +104,7 @@ class WebSearchCog:
         contents = []
         for url in urls:
             print(f"Fetching content from {url}")
-            content = fetch_page_content(url)
+            content = f"From {url}:" + fetch_page_content(url)
             if content:
                 contents.append(content[:3000])  # Limit content length
 
