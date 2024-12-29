@@ -5,8 +5,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import ClearIcon from '@mui/icons-material/Clear';
-import ReactMarkdown from 'react-markdown';
-
 
 import {
   TextField,
@@ -257,12 +255,16 @@ function ChatApp() {
                         <ListItem sx={{ display: 'block' }}>
                           <Box
                             sx={{
-                              backgroundColor: msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700'),
+                              backgroundColor: isImage
+                                ? 'transparent' // No background for images
+                                : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
                               color: 'white',
                               borderRadius: 2,
-                              p: 1,
+                              p: isImage ? 0 : 1, // No padding for images
                               maxWidth: '80%',
                               ml: msg.role === "user" ? 'auto' : 0,
+                              display: 'flex',
+                              alignItems: 'center',
                             }}
                           >
                             {msg.role === "assistant" && msg.loading ? (
@@ -272,8 +274,16 @@ function ChatApp() {
                                   Assistant is typing...
                                 </Typography>
                               </Box>
+                            ) : isImage ? (
+                              <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+                                <img
+                                  src={msg.content.slice(19, -1)} // Corrected slice
+                                  alt="Generated"
+                                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                                />
+                              </Box>
                             ) : (
-                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                              <Typography variant="body1">{msg.content}</Typography>
                             )}
                           </Box>
                         </ListItem>
