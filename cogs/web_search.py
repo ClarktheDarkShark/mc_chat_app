@@ -110,9 +110,9 @@ class WebSearchCog:
         for url in urls:
             print(f"Fetching content from {url}")
             content = fetch_page_content(url)
-            print('og content', content)
+            # print('og content', content)
             content = f"From {url}:" + content
-            print('new content', content)
+            # print('new content', content)
             if content:
                 contents.append(content[:3000])  # Limit content length
 
