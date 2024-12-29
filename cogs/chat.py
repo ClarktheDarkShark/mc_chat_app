@@ -45,7 +45,7 @@ class ChatBlueprint:
 
             # Initialize conversation history in session
             if 'conversation_history' not in session:
-                session['conversation_history'] = [{"role": "system", "content": system_prompt}]
+                session['conversation_history'] = [{"role": "system", "content": system_prompt + '\n' + additional_instructions}]
             conversation = session['conversation_history']
 
             # Append user message to conversation history

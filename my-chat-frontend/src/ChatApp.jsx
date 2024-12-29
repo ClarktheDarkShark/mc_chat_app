@@ -152,9 +152,10 @@ function ChatApp() {
       >
         <Container maxWidth="md" sx={{ mb: 4 }}> {/* Changed mt to mb for reversed layout */}
           <Paper elevation={6} sx={{ p: 3, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
+            
             {/* In-App Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h4" gutterBottom color="primary">
+              <Typography variant="h5" gutterBottom color="primary">
                 USMC Agent Demo
               </Typography>
               <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
@@ -225,9 +226,9 @@ function ChatApp() {
                 ref={conversationRef}
                 sx={{
                   mb: 3,
-                  maxHeight: { xs: '300px', sm: '500px' }, // Adjusted for mobile and larger screens
+                  maxHeight: { xs: '600px', sm: '800px' }, // Adjusted for mobile and larger screens
                   overflowY: 'auto',
-                  paddingRight: 1, // Optional: Add some padding for scrollbar
+                  paddingRight: 0, // Optional: Add some padding for scrollbar
                 }}
               >
                 <List>
