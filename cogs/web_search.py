@@ -58,6 +58,7 @@ class WebSearchCog:
         """Perform a web search using the Google Custom Search API."""
         # First, generate optimized search terms using the LLM
         optimized_query = self.generate_search_terms(query)
+        print(f"Query: {query}\n")
         print(f"Optimized Query: {optimized_query}")
 
         if validators.url(optimized_query):
