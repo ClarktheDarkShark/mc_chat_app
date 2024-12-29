@@ -17,15 +17,13 @@ import {
   Select,
   MenuItem,
   Paper,
-  List,
-  ListItem,
   CircularProgress,
 } from "@mui/material";
 
-// Import react-markdown for Markdown rendering
+// Import react-markdown
 import ReactMarkdown from 'react-markdown';
 
-// Error Boundary Component to Catch Rendering Errors
+// Error Boundary Component
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -53,7 +51,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Define MUI Theme
 const theme = createTheme({
   palette: {
     primary: { main: '#AF002A' }, // USMC Scarlet
@@ -79,17 +76,16 @@ function ChatApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Ref for the conversation box to enable auto-scrolling
+  // Ref for the conversation box
   const conversationRef = useRef(null);
 
-  // Auto-scroll to the bottom when new messages are added
+  // Auto-scroll effect for the conversation box
   useEffect(() => {
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversation]);
 
-  // Function to send a message
   const sendMessage = async () => {
     setError("");
 
@@ -99,15 +95,15 @@ function ChatApp() {
     }
 
     // Create a new message object for the user
-    const userMessage = { role: "user", content: message.trim() };
+    const userMessage = { role: "user", content: message.trim(), id: Date.now() };
 
     // Create a placeholder for the assistant's response
-    const assistantPlaceholder = { role: "assistant", content: "Assistant is typing...", loading: true };
+    const assistantPlaceholder = { role: "assistant", content: "Assistant is typing...", loading: true, id: Date.now() + 1 };
 
     // Update the conversation optimistically
     setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
 
-    // Clear the input field and set loading to true
+    // Clear the input field and set loading
     setMessage("");
     setLoading(true);
 
@@ -132,7 +128,7 @@ function ChatApp() {
         setConversation((prev) => {
           const updated = [...prev];
           updated.pop(); // Remove the placeholder
-          updated.push({ role: "assistant", content: `Error: ${data.error}`, loading: false });
+          updated.push({ role: "assistant", content: `Error: ${data.error}`, loading: false, id: Date.now() + 2 });
           return updated;
         });
       } else {
@@ -140,7 +136,7 @@ function ChatApp() {
         setConversation((prev) => {
           const updated = [...prev];
           updated.pop(); // Remove the placeholder
-          updated.push({ role: "assistant", content: data.assistant_reply, loading: false });
+          updated.push({ role: "assistant", content: data.assistant_reply, loading: false, id: Date.now() + 3 });
           return updated;
         });
       }
@@ -151,7 +147,7 @@ function ChatApp() {
       setConversation((prev) => {
         const updated = [...prev];
         updated.pop(); // Remove the placeholder
-        updated.push({ role: "assistant", content: "Error: Something went wrong.", loading: false });
+        updated.push({ role: "assistant", content: "Error: Something went wrong.", loading: false, id: Date.now() + 4 });
         return updated;
       });
     } finally {
@@ -159,7 +155,6 @@ function ChatApp() {
     }
   };
 
-  // Handle pressing Enter to send message
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -182,7 +177,7 @@ function ChatApp() {
         }}
       >
         <Container
-          maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }} // Expanded maxWidth for larger screens
+          maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }}
           sx={{
             mb: { xs: 2, sm: 4 },     // Adjust spacing for mobile vs. desktop
             flexGrow: 1,
@@ -199,7 +194,7 @@ function ChatApp() {
             sx={{
               p: { xs: 1, sm: 2 },    // Less padding on mobile
               borderRadius: 3,
-              maxWidth: { xs: '100%', sm: '800px', lg: '1000px' }, // Adjust maxWidth based on screen size
+              maxWidth: '100%',         // Use full width up to maxWidth
               margin: '0 auto',
               backgroundColor: 'background.paper',
               display: 'flex',
@@ -214,7 +209,7 @@ function ChatApp() {
               <Typography variant={{ xs: 'h6', sm: 'h5', md: 'h4' }} color="primary">
                 USMC Agent Demo
               </Typography>
-              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small" aria-label="settings">
+              <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
                 {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
               </IconButton>
             </Box>
@@ -286,87 +281,80 @@ function ChatApp() {
                   pr: { xs: 0, sm: 1 },
                 }}
               >
-                <List>
-                  {conversation.map((msg, index) => {
-                    const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
-                    const isAssistant = msg.role === "assistant";
+                {conversation.map((msg) => {
+                  const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
+                  const isAssistant = msg.role === "assistant";
 
-                    // Generate a unique key for each message
-                    const uniqueKey = `${msg.role}-${index}-${msg.content.slice(0, 10)}`;
+                  // Log message content for debugging
+                  console.log(`Rendering message ${msg.id}:`, msg.content);
 
-                    // Log message content for debugging
-                    console.log(`Rendering message ${index}:`, msg.content);
+                  let renderedContent;
 
-                    let renderedContent;
+                  if (msg.loading) {
+                    renderedContent = (
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <CircularProgress size={20} color="secondary" />
+                        <Typography variant="body2" sx={{ ml: 1 }}>
+                          Assistant is typing...
+                        </Typography>
+                      </Box>
+                    );
+                  } else if (isImage) {
+                    // Safely extract the image URL using regex
+                    const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
+                    const imageUrl = match ? match[1] : null;
 
-                    if (msg.loading) {
+                    if (imageUrl) {
                       renderedContent = (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <CircularProgress size={20} color="secondary" />
-                          <Typography variant="body2" sx={{ ml: 1 }}>
-                            Assistant is typing...
-                          </Typography>
+                        <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+                          <img
+                            src={imageUrl}
+                            alt="Generated"
+                            style={{ width: '100%', height: 'auto', display: 'block' }}
+                          />
                         </Box>
-                      );
-                    } else if (isImage) {
-                      // Safely extract the image URL using regex
-                      const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
-                      const imageUrl = match ? match[1] : null;
-
-                      if (imageUrl) {
-                        renderedContent = (
-                          <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
-                            <img
-                              src={imageUrl}
-                              alt="Generated"
-                              style={{ width: '100%', height: 'auto', display: 'block' }}
-                            />
-                          </Box>
-                        );
-                      } else {
-                        renderedContent = (
-                          <Typography variant="body1" color="error">
-                            Invalid image URL.
-                          </Typography>
-                        );
-                      }
-                    } else if (isAssistant) {
-                      renderedContent = (
-                        <ReactMarkdown>
-                          {msg.content || "**(No content available)**"}
-                        </ReactMarkdown>
                       );
                     } else {
                       renderedContent = (
-                        <Typography variant="body1">
-                          {msg.content || "No response available."}
+                        <Typography variant="body1" color="error">
+                          Invalid image URL.
                         </Typography>
                       );
                     }
-
-                    return (
-                      <Fade in={true} timeout={500} key={uniqueKey}>
-                        <ListItem sx={{ display: 'block' }}>
-                          <Box
-                            sx={{
-                              backgroundColor: isImage
-                                ? 'transparent'
-                                : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
-                              color: 'white',
-                              borderRadius: 2,
-                              p: isImage ? 0 : 1,
-                              maxWidth: '80%',
-                              ml: msg.role === "user" ? 'auto' : 0,
-                              mb: 1,
-                            }}
-                          >
-                            {renderedContent}
-                          </Box>
-                        </ListItem>
-                      </Fade>
+                  } else if (isAssistant) {
+                    renderedContent = (
+                      <ReactMarkdown>
+                        {msg.content || "**(No content available)**"}
+                      </ReactMarkdown>
                     );
-                  })}
-                </List>
+                  } else {
+                    renderedContent = (
+                      <Typography variant="body1">
+                        {msg.content || "No response available."}
+                      </Typography>
+                    );
+                  }
+
+                  return (
+                    <Fade in={true} timeout={500} key={msg.id}>
+                      <Box
+                        sx={{
+                          backgroundColor: isImage
+                            ? 'transparent'
+                            : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+                          color: 'white',
+                          borderRadius: 2,
+                          p: isImage ? 0 : 1,
+                          maxWidth: '80%',
+                          ml: msg.role === "user" ? 'auto' : 0,
+                          mb: 1,
+                        }}
+                      >
+                        {renderedContent}
+                      </Box>
+                    </Fade>
+                  );
+                })}
               </Box>
             </ErrorBoundary>
 
