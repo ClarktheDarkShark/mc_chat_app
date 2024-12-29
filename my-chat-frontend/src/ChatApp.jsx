@@ -158,7 +158,7 @@ function ChatApp() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
-            height: '100%'
+            height: '80%'
           }}> {/* Changed mt to mb for reversed layout */}
           <Paper elevation={6} sx={{ p: 2, borderRadius: 3, maxWidth: '800px', margin: '0 auto', backgroundColor: 'background.paper' }}>
             
