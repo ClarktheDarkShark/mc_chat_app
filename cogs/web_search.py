@@ -33,9 +33,9 @@ class WebSearchCog:
 
         try:
             response = self.openai_client.chat.completions.create(
-                model="gpt-4",  # Specify the desired model
+                model="gpt-4o-mini",  # Specify the desired model
                 messages=[
-                    {"role": "system", "content": "You are ChatGPT, a large language model trained by OpenAI."},
+                    {"role": "system", "content": prompt},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=60,
