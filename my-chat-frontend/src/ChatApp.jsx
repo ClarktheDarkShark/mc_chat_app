@@ -22,18 +22,18 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-// 1) Install and Import react-markdown
+// Import react-markdown
 import ReactMarkdown from 'react-markdown';
 
-// 2) Error Boundary Component
+// Error Boundary Component
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true };
+    return { hasError: true, error: error };
   }
 
   componentDidCatch(error, errorInfo) {
@@ -42,7 +42,11 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      return <Typography color="error">Something went wrong while rendering the messages.</Typography>;
+      return (
+        <Typography color="error">
+          Something went wrong while rendering the messages: {this.state.error.toString()}
+        </Typography>
+      );
     }
 
     return this.props.children; 
@@ -170,6 +174,8 @@ function ChatApp() {
           display: 'flex',
           flexDirection: 'column-reverse',
           justifyContent: 'flex-start',
+          // Remove any border
+          border: 'none',
         }}
       >
         <Container
@@ -181,6 +187,8 @@ function ChatApp() {
             flexDirection: 'column',
             justifyContent: 'flex-end',
             height: { xs: 'auto', sm: '80%' },
+            // Remove any border
+            border: 'none',
           }}
         >
           <Paper
@@ -195,6 +203,7 @@ function ChatApp() {
               flexDirection: 'column',
               height: '100%',
               boxShadow: 'none',        // Remove any default shadow if causing borders
+              border: 'none',           // Ensure no border
             }}
           >
             {/* Header */}
@@ -269,7 +278,7 @@ function ChatApp() {
                 sx={{
                   flexGrow: 1,
                   overflowY: 'auto',
-                  maxHeight: { xs: '50vh', sm: '70vh' },
+                  maxHeight: { xs: '50vh', sm: '70vh' }, // Adjusted for mobile and larger screens
                   mb: 1,
                   pr: { xs: 0, sm: 1 },
                 }}
@@ -278,6 +287,56 @@ function ChatApp() {
                   {conversation.map((msg, index) => {
                     const isImage = msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
                     const isAssistant = msg.role === "assistant";
+
+                    // Log message content for debugging
+                    console.log(`Rendering message ${index}:`, msg.content);
+
+                    let renderedContent;
+
+                    if (msg.loading) {
+                      renderedContent = (
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <CircularProgress size={20} color="secondary" />
+                          <Typography variant="body2" sx={{ ml: 1 }}>
+                            Assistant is typing...
+                          </Typography>
+                        </Box>
+                      );
+                    } else if (isImage) {
+                      // Safely extract the image URL using regex
+                      const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
+                      const imageUrl = match ? match[1] : null;
+
+                      if (imageUrl) {
+                        renderedContent = (
+                          <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+                            <img
+                              src={imageUrl}
+                              alt="Generated"
+                              style={{ width: '100%', height: 'auto', display: 'block' }}
+                            />
+                          </Box>
+                        );
+                      } else {
+                        renderedContent = (
+                          <Typography variant="body1" color="error">
+                            Invalid image URL.
+                          </Typography>
+                        );
+                      }
+                    } else if (isAssistant) {
+                      renderedContent = (
+                        <ReactMarkdown>
+                          {msg.content || "**(No content available)**"}
+                        </ReactMarkdown>
+                      );
+                    } else {
+                      renderedContent = (
+                        <Typography variant="body1">
+                          {msg.content || "No response available."}
+                        </Typography>
+                      );
+                    }
 
                     return (
                       <Fade in={true} timeout={500} key={index}>
@@ -295,28 +354,7 @@ function ChatApp() {
                               mb: 1,
                             }}
                           >
-                            {msg.loading ? (
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <CircularProgress size={20} color="secondary" />
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  Assistant is typing...
-                                </Typography>
-                              </Box>
-                            ) : isImage ? (
-                              <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
-                                <img
-                                  src={msg.content.slice(19, -1)}
-                                  alt="Generated"
-                                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                                />
-                              </Box>
-                            ) : isAssistant ? (
-                              <ReactMarkdown>
-                                {msg.content || "**(No content available)**"}
-                              </ReactMarkdown>
-                            ) : (
-                              <Typography variant="body1">{msg.content || "No response available."}</Typography>
-                            )}
+                            {renderedContent}
                           </Box>
                         </ListItem>
                       </Fade>
