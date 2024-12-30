@@ -207,8 +207,12 @@ class ChatBlueprint:
                 print()
                 conversation_history.append({"role": "assistant", "content": assistant_reply})
                 # Save messages
+                start_time = time.time()
                 self.save_messages(conversation_id, "user", user_message)
                 self.save_messages(conversation_id, "assistant", assistant_reply)
+                end_time = time.time()
+                print()
+                print("generate_chat_response took %s seconds", end_time - start_time)
 
                 return jsonify({
                     "user_message": user_message,
