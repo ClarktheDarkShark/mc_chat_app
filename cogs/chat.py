@@ -92,7 +92,7 @@ class ChatBlueprint:
 
                     # Read the file content
                     try:
-                        file_content = file.read().decode('utf-8', errors='ignore')  # Decode for text files
+                        file_content = file.read(1024 * 1024)  # Limit read to 1MB
                     except Exception as e:
                         file_content = "Could not read file content."
                         print("Error reading file:", e)

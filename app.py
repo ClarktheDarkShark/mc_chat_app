@@ -14,6 +14,13 @@ class FlaskApp:
         self.app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
         self.app.config['SESSION_PERMANENT'] = False
 
+        # --- Add Timeout and File Upload Configurations ---
+        self.app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+        self.app.config['PROPAGATE_EXCEPTIONS'] = True
+        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600
+        self.app.config['REQUEST_TIMEOUT'] = 60  # Increase timeout to 30 seconds
+        self.app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file size to 16 MB
+
         # Database configuration
         print("\nGetting DB credentials...")
         uri = os.getenv("DATABASE_URL")  # Get Heroku's default DATABASE_URL
