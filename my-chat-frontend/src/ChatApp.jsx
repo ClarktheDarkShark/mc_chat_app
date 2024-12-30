@@ -79,7 +79,24 @@ function ChatApp() {
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
-  const [conversation, setConversation] = useState([]);
+  
+  // Initialize conversation with a welcome message
+  const [conversation, setConversation] = useState([
+    {
+      role: "assistant",
+      content: `**Welcome to the USMC AI Agent Demo!**  
+I am here to assist you with a variety of tasks. Here are some things you can ask me:
+
+- *"Summarize the latest news about the Marine Corps."*  
+- *"Explain how the intent function in your code provodes user query orchestration."*  
+- *"Generate a briefing on amphibious operations."*  
+- *"Create an image of Marines conducting an amphibious assault."*  
+
+Feel free to type your question below!`,
+      id: "welcome",
+    },
+  ]);
+  
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -158,8 +175,22 @@ function ChatApp() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Set current conversation to new one
-        setConversation([]);
+        // Reset conversation to include the welcome message
+        setConversation([
+          {
+            role: "assistant",
+            content: `**Welcome to the USMC AI Agent Demo!**  
+I am here to assist you with a variety of tasks. Here are some things you can ask me:
+
+- *"Summarize the latest news about the Marine Corps."*  
+- *"Explain the key features of the new tactical vehicle."*  
+- *"Generate a briefing on amphibious operations."*  
+- *"Create a Python script that automates data analysis."*  
+
+Feel free to type your question below!`,
+            id: "welcome",
+          },
+        ]);
         setError("");
         // Optionally, fetch conversations list again
         fetchConversations();
@@ -189,16 +220,20 @@ function ChatApp() {
     const placeholderId = Date.now() + 1;
 
     // Add the user message and assistant placeholder to the conversation
-    setConversation((prev) => [
-      ...prev,
-      userMessage,
-      {
-        role: "assistant",
-        content: "Assistant is thinking...", // Initial loading text
-        loading: true,
-        id: placeholderId,
-      },
-    ]);
+    setConversation((prev) => {
+      // Remove the welcome message if it's still present
+      const filtered = prev.filter((msg) => msg.id !== "welcome");
+      return [
+        ...filtered,
+        userMessage,
+        {
+          role: "assistant",
+          content: "Assistant is thinking...", // Initial loading text
+          loading: true,
+          id: placeholderId,
+        },
+      ];
+    });
 
     setMessage("");
     setLoading(true);
@@ -577,7 +612,7 @@ function ChatApp() {
 
             {/* Footer */}
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
-              *This is a commercial non-government application and can produce incorrect responses. It is not authorized for CUI data.
+              *This is a commercial non-government application and can produce incorrect responses. It is not authorized for CUI data.*
             </Typography>
           </Box>
         </Container>
