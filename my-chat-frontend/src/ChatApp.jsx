@@ -484,7 +484,7 @@ Feel free to type your question below!`,
                 sx={{
                   flexGrow: 1,
                   overflowY: 'auto',
-                  maxHeight: { xs: '50vh', sm: '70vh' },
+                  maxHeight: { xs: '70vh', sm: '90vh' },
                   mb: 1,
                   pr: { xs: 0, sm: 1 },
                 }}
