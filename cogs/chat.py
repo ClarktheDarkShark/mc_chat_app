@@ -237,7 +237,7 @@ Ensure sufficient line breaks between sections to improve readability.'''
             {
                 'role': 'system', 
                 'content': (
-                    'As an AI assistant, analyze the user input and output a JSON object with the following keys:\n'
+                    'As an AI assistant, analyze the user input, including the last 5 user queries, and output a JSON object with the following keys:\n'
                     '- "image_generation": (boolean)\n'
                     '- "image_prompt": (string)\n'
                     '- "internet_search": (boolean)\n'
