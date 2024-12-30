@@ -48,7 +48,9 @@ class ChatBlueprint:
         self.app_instance = app_instance
 
         # **ADDED** Ensure 'uploads' directory exists
-        self.upload_folder = os.path.join(self.app_instance.root_path, 'uploads')
+        # self.upload_folder = os.path.join(self.app_instance.root_path, 'uploads')
+        self.upload_folder = os.path.join(self.app_instance.instance_path, 'uploads')
+
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
 
