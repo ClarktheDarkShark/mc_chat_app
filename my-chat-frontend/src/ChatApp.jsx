@@ -24,7 +24,10 @@ import ClearIcon from '@mui/icons-material/Clear';
 // 1) Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
 
-// 2) Minimal Error Boundary to catch rendering errors
+// 2) Import uuid for unique message IDs
+import { v4 as uuidv4 } from 'uuid';
+
+// 3) Minimal Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -84,7 +87,7 @@ function ChatApp() {
     }
   }, [conversation]);
 
-  // 3) Send message logic
+  // 4) Send message logic
   const sendMessage = async () => {
     setError("");
     if (!message.trim()) {
@@ -96,7 +99,7 @@ function ChatApp() {
     const userMessage = {
       role: "user",
       content: message.trim(),
-      id: Date.now(),      // unique key
+      id: uuidv4(), // unique key using uuid
     };
 
     // Placeholder for assistant
@@ -104,7 +107,7 @@ function ChatApp() {
       role: "assistant",
       content: "Assistant is typing...",
       loading: true,
-      id: Date.now() + 1, // unique key
+      id: uuidv4(), // unique key using uuid
     };
 
     // Update conversation optimistically
@@ -126,6 +129,11 @@ function ChatApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.error) {
@@ -138,7 +146,7 @@ function ChatApp() {
             role: "assistant",
             content: `Error: ${data.error}`,
             loading: false,
-            id: Date.now() + 2,
+            id: uuidv4(),
           });
           return updated;
         });
@@ -151,7 +159,7 @@ function ChatApp() {
             role: "assistant",
             content: data.assistant_reply || "No response.",
             loading: false,
-            id: Date.now() + 3,
+            id: uuidv4(),
           });
           return updated;
         });
@@ -166,7 +174,7 @@ function ChatApp() {
           role: "assistant",
           content: "Error: Something went wrong.",
           loading: false,
-          id: Date.now() + 4,
+          id: uuidv4(),
         });
         return updated;
       });
@@ -175,8 +183,8 @@ function ChatApp() {
     }
   };
 
-  // 4) Handle Enter key in multiline TextField
-  const handleKeyPress = (e) => {
+  // 5) Handle Enter key in multiline TextField using onKeyDown
+  const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -196,7 +204,7 @@ function ChatApp() {
           border: 'none',
         }}
       >
-        {/* 5) Container Setup */}
+        {/* 6) Container Setup */}
         <Container
           maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }}
           sx={{
@@ -298,13 +306,14 @@ function ChatApp() {
                   pr: { xs: 0, sm: 1 },
                 }}
               >
-                {/* 6) Render each message as a simple Box (no <Fade> or <List>) */}
+                {/* 7) Render each message as a simple Box (no <Fade> or <List>) */}
                 {conversation.map((msg) => {
                   console.log(`Rendering message ${msg.id}:`, msg.content);
 
                   const isImage =
                     msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
                   const isAssistant = msg.role === "assistant";
+                  const isSystem = msg.role === "system";
 
                   let contentToRender;
 
@@ -340,15 +349,26 @@ function ChatApp() {
                       );
                     }
                   } else if (isAssistant) {
+                    // Ensure msg.content is a string
+                    const assistantContent = typeof msg.content === 'string' ? msg.content : "**(No content available)**";
                     contentToRender = (
                       <ReactMarkdown>
-                        {msg.content || "**(No content available)**"}
+                        {assistantContent}
                       </ReactMarkdown>
                     );
+                  } else if (isSystem) {
+                    // Optionally, render system messages differently or skip rendering
+                    contentToRender = (
+                      <Typography variant="body2" color="secondary" fontStyle="italic">
+                        {msg.content}
+                      </Typography>
+                    );
                   } else {
+                    // Handle 'user' and any other roles
+                    const userContent = typeof msg.content === 'string' ? msg.content : "No response available.";
                     contentToRender = (
                       <Typography variant="body1">
-                        {msg.content || "No response available."}
+                        {userContent}
                       </Typography>
                     );
                   }
@@ -359,13 +379,14 @@ function ChatApp() {
                       sx={{
                         backgroundColor: isImage
                           ? 'transparent'
-                          : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+                          : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : (isSystem ? 'grey.800' : 'grey.700'))),
                         color: 'white',
                         borderRadius: 2,
                         p: isImage ? 0 : 1,
                         maxWidth: '80%',
-                        ml: msg.role === "user" ? 'auto' : 0,
+                        ml: msg.role === "user" ? 'auto' : (isSystem ? '0' : 0),
                         mb: 1,
+                        alignSelf: msg.role === "user" ? 'flex-end' : 'flex-start',
                       }}
                     >
                       {contentToRender}
@@ -385,7 +406,7 @@ function ChatApp() {
                 maxRows={4}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 InputLabelProps={{ style: { color: '#ffffff' } }}
                 InputProps={{
                   style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' },
