@@ -174,6 +174,17 @@ class ChatBlueprint:
                 else:
                     temp_conversation = conversation_history
 
+                def trim_conversation(conversation, max_tokens=8000):
+                    encoding = tiktoken.encoding_for_model("gpt-4")
+                    total_tokens = 0
+                    trimmed = []
+                    for message in reversed(conversation):
+                        tokens = len(encoding.encode(message['content']))
+                        total_tokens += tokens
+                        if total_tokens > max_tokens:
+                            break
+                        trimmed.insert(0, message)
+                    return trimmed
                 # Trim the conversation if it exceeds 8000 tokens
                 temp_conversation = trim_conversation(temp_conversation, 8000)
 
@@ -344,14 +355,3 @@ class ChatBlueprint:
             print()
             return "Error generating response."
 
-    def trim_conversation(conversation, max_tokens=8000):
-        encoding = tiktoken.encoding_for_model("gpt-4")
-        total_tokens = 0
-        trimmed = []
-        for message in reversed(conversation):
-            tokens = len(encoding.encode(message['content']))
-            total_tokens += tokens
-            if total_tokens > max_tokens:
-                break
-            trimmed.insert(0, message)
-        return trimmed
