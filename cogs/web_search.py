@@ -28,7 +28,7 @@ class WebSearchCog:
         self.search_engine_id = os.getenv('SEARCH_ENGINE_ID')
         self.search_url = "https://www.googleapis.com/customsearch/v1"
 
-    def generate_search_terms(self, user_input):
+    def generate_search_terms(self, user_input, history):
         """
         Use the provided OpenAI client to generate optimized search terms from user input.
         """
@@ -41,6 +41,7 @@ class WebSearchCog:
                 model="gpt-4o-mini",  # Specify the desired model
                 messages=[
                     {"role": "system", "content": prompt},
+                    *history,
                     {"role": "user", "content": f"User Input: {user_input}\n"}
                 ],
                 max_tokens=60,
@@ -59,10 +60,10 @@ class WebSearchCog:
             # Fallback to original query if LLM fails
             return user_input
 
-    def web_search(self, query):
+    def web_search(self, query, history):
         """Perform a web search using the Google Custom Search API."""
         # First, generate optimized search terms using the LLM
-        optimized_query = self.generate_search_terms(query)
+        optimized_query = self.generate_search_terms(query, history)
         print(f"Query: {query}\n")
         print(f"Optimized Query: {optimized_query}")
 
