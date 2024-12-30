@@ -10,6 +10,7 @@ from .code_files import CodeFilesCog
 from datetime import datetime
 import uuid
 import tiktoken
+import time
 
 # Define Database Models
 class Conversation(db.Model):
@@ -189,12 +190,16 @@ class ChatBlueprint:
                 temp_conversation = trim_conversation(temp_conversation, 50000)
 
                 # Regular Chat Response
-                print()
+                # print()
+                # print('***************************************************************************************************************')
+                # print('temp_conversation', temp_conversation)
                 print('***************************************************************************************************************')
-                print('temp_conversation', temp_conversation)
-                print('***************************************************************************************************************')
                 print()
+                start_time = time.time()
                 assistant_reply = self.generate_chat_response(temp_conversation, model, temperature)
+                end_time = time.time()
+                print()
+                print("generate_chat_response took %s seconds", end_time - start_time)
                 print()
                 print()
                 print('Final Response:', assistant_reply)
