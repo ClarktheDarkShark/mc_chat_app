@@ -11,6 +11,7 @@ from datetime import datetime
 import uuid
 import tiktoken
 import time
+from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # **ADDED secure_filename**
 
 # Define Database Models
@@ -90,10 +91,32 @@ class ChatBlueprint:
 
                     # Reset the file pointer
                     file.seek(0)
+                    WORD_LIMIT = 50000
 
-                    # Read the file content
-                    try:
-                        file_content = file.read().decode('utf-8', errors='ignore') 
+                    if file and file.content_type == 'application/pdf':
+                        try:
+                            reader = PdfReader(file)
+                            file_content = ""
+                            for page in reader.pages:
+                                file_content += page.extract_text() or ""
+                            
+                            # Truncate to 50,000 words
+                            words = file_content.split()
+                            if len(words) > WORD_LIMIT:
+                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                            if not file_content.strip():
+                                file_content = "Unable to extract text from this PDF."
+
+                        except Exception as e:
+                            print("Error reading PDF:", e)
+                            file_content = "Error processing PDF file."
+                    else:
+                        file_content = file.read().decode('utf-8', errors='ignore')
+
+                    # # Read the file content
+                    # try:file_content = file.read().decode('utf-8', errors='ignore') 
+                        
                     except Exception as e:
                         file_content = "Could not read file content."
                         print("Error reading file:", e)
@@ -268,7 +291,7 @@ class ChatBlueprint:
                 def trim_conversation(temp_conversation, max_tokens=50000):
                     print('Before trim: temp_conversation', temp_conversation)
                     
-                    encoding = tiktoken.encoding_for_model("gpt-4")
+                    encoding = tiktoken.encoding_for_model("gpt-4o")
                     total_tokens = 0
                     trimmed = []
                     
