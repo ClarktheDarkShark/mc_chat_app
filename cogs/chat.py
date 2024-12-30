@@ -249,7 +249,7 @@ class ChatBlueprint:
                 else:
                     temp_conversation = copy.deepcopy(conversation_history)
                     temp_conversation[-1]['content'] = (
-                        f'\n{file_content}\n"
+                        f'\n{file_content}\n')
 
                 def trim_conversation(conversation, max_tokens=50000):
                     encoding = tiktoken.encoding_for_model(model)
