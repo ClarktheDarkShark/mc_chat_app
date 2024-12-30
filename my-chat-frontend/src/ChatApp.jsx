@@ -82,6 +82,7 @@ function ChatApp() {
   // Ref for auto-scroll
   const conversationRef = useRef(null);
   useEffect(() => {
+    console.log("Conversation updated:", conversation);
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
@@ -102,6 +103,8 @@ function ChatApp() {
       id: uuidv4(), // unique key using uuid
     };
 
+    console.log("User message created:", userMessage);
+
     // Placeholder for assistant
     const assistantPlaceholder = {
       role: "assistant",
@@ -109,6 +112,8 @@ function ChatApp() {
       loading: true,
       id: uuidv4(), // unique key using uuid
     };
+
+    console.log("Assistant placeholder created:", assistantPlaceholder);
 
     // Update conversation optimistically
     setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
@@ -123,6 +128,8 @@ function ChatApp() {
       temperature,
     };
 
+    console.log("Payload sent to backend:", payload);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -130,11 +137,14 @@ function ChatApp() {
         body: JSON.stringify(payload),
       });
 
+      console.log("Backend response status:", res.status);
+
       if (!res.ok) {
         throw new Error(`HTTP error! Status: ${res.status}`);
       }
 
       const data = await res.json();
+      console.log("Backend response data:", data);
 
       if (data.error) {
         // Replace placeholder with error
@@ -142,40 +152,50 @@ function ChatApp() {
         setConversation((prev) => {
           const updated = [...prev];
           updated.pop();
-          updated.push({
+          const errorMessage = {
             role: "assistant",
             content: `Error: ${data.error}`,
             loading: false,
             id: uuidv4(),
-          });
+          };
+          console.log("Assistant error message to be added:", errorMessage);
+          updated.push(errorMessage);
+          console.log("Updated conversation with error message:", updated);
           return updated;
         });
       } else {
         // Replace placeholder with final assistant message
+        const assistantMessage = {
+          role: "assistant",
+          content: data.assistant_reply || "No response.",
+          loading: false,
+          id: uuidv4(),
+        };
+        console.log("Assistant message to be added:", assistantMessage);
+
         setConversation((prev) => {
           const updated = [...prev];
           updated.pop();
-          updated.push({
-            role: "assistant",
-            content: data.assistant_reply || "No response.",
-            loading: false,
-            id: uuidv4(),
-          });
+          updated.push(assistantMessage);
+          console.log("Updated conversation:", updated);
           return updated;
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Fetch error:", err);
       setError("Something went wrong. Check the console.");
       setConversation((prev) => {
         const updated = [...prev];
         updated.pop();
-        updated.push({
+        const errorMessage = {
           role: "assistant",
           content: "Error: Something went wrong.",
           loading: false,
           id: uuidv4(),
-        });
+        };
+        console.log("Assistant error message to be added after catch:", errorMessage);
+        updated.push(errorMessage);
+        console.log("Updated conversation with catch error message:", updated);
         return updated;
       });
     } finally {
@@ -308,7 +328,33 @@ function ChatApp() {
               >
                 {/* 7) Render each message as a simple Box (no <Fade> or <List>) */}
                 {conversation.map((msg) => {
-                  console.log(`Rendering message ${msg.id}:`, msg.content);
+                  console.log(`Rendering message ${msg.id}:`, msg);
+
+                  // Check the type of msg.content
+                  console.log(`Type of msg.content for ${msg.id}:`, typeof msg.content);
+
+                  // Validate msg.content type
+                  if (typeof msg.content !== 'string') {
+                    console.error(`Invalid content type for message ${msg.id}:`, typeof msg.content);
+                    return (
+                      <Box
+                        key={msg.id}
+                        sx={{
+                          backgroundColor: 'error.main',
+                          color: 'white',
+                          borderRadius: 2,
+                          p: 1,
+                          maxWidth: '80%',
+                          mb: 1,
+                          alignSelf: 'flex-start',
+                        }}
+                      >
+                        <Typography variant="body1">
+                          Invalid message content.
+                        </Typography>
+                      </Box>
+                    );
+                  }
 
                   const isImage =
                     msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
@@ -342,6 +388,7 @@ function ChatApp() {
                         </Box>
                       );
                     } else {
+                      console.error(`Invalid image URL format for message ${msg.id}:`, msg.content);
                       contentToRender = (
                         <Typography variant="body1" color="error">
                           Invalid image URL.
@@ -349,13 +396,24 @@ function ChatApp() {
                       );
                     }
                   } else if (isAssistant) {
-                    // Ensure msg.content is a string
-                    const assistantContent = typeof msg.content === 'string' ? msg.content : "**(No content available)**";
-                    contentToRender = (
-                      <ReactMarkdown>
-                        {assistantContent}
-                      </ReactMarkdown>
-                    );
+                    try {
+                      // Ensure msg.content is a string
+                      const assistantContent = typeof msg.content === 'string' ? msg.content : "**(No content available)**";
+                      console.log(`Rendering ReactMarkdown for message ${msg.id}:`, assistantContent);
+
+                      contentToRender = (
+                        <ReactMarkdown>
+                          {assistantContent}
+                        </ReactMarkdown>
+                      );
+                    } catch (markdownError) {
+                      console.error(`Error rendering ReactMarkdown for message ${msg.id}:`, markdownError);
+                      contentToRender = (
+                        <Typography variant="body1" color="error">
+                          Error rendering message.
+                        </Typography>
+                      );
+                    }
                   } else if (isSystem) {
                     // Optionally, render system messages differently or skip rendering
                     contentToRender = (
