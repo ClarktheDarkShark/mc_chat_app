@@ -190,7 +190,7 @@ function ChatApp() {
     let loadingText = "Assistant is typing...";  // Default loading text
     if (message.toLowerCase().includes("search") || message.toLowerCase().includes("look up")) {
       loadingText = "Searching the internet...";
-    } else if (message.toLowerCase().includes("generate image") || message.toLowerCase().includes("create image")) {
+    } else if (message.toLowerCase().includes("image") || message.toLowerCase().includes("create image")) {
       loadingText = "Creating the image...";
     }
   
@@ -291,7 +291,7 @@ function ChatApp() {
           minHeight: '100vh',
           p: { xs: 1, sm: 2 },
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'column-reverse',
           justifyContent: 'flex-start',
           border: 'none',
         }}
@@ -303,7 +303,7 @@ function ChatApp() {
             mb: { xs: 2, sm: 4 },
             flexGrow: 1,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'column-reverse',
             justifyContent: 'flex-end',
             height: { xs: 'auto', sm: '80%' },
             border: 'none',
