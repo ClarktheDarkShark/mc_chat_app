@@ -42,7 +42,10 @@ class WebSearchCog:
                 ]
 
         try:
+            print()
             print('messages', messages)
+            print('user_input', user_input)
+            print()
             response = self.openai_client.chat.completions.create(
                 model="gpt-4o-mini",  # Specify the desired model
                 messages=messages,
