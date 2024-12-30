@@ -31,10 +31,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import UploadFileIcon from '@mui/icons-material/UploadFile'; // **ADDED**
 
 import ReactMarkdown from 'react-markdown';
-import { FixedSizeList as ListWindow } from 'react-window';
-
-// Import react-icons for upload icon (optional alternative)
-// import { FaUpload } from 'react-icons/fa'; // **OPTIONAL**
+// Removed react-window for debugging purposes
+// import { FixedSizeList as ListWindow } from 'react-window';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -335,7 +333,6 @@ Feel free to type your question below!`,
       setError("Please enter a message or upload a file.");
       return;
     }
-    
 
     const userMessage = {
       role: "user",
@@ -417,17 +414,6 @@ Feel free to type your question below!`,
       console.log("Response from /api/chat:", data);
       const { assistant_reply, intent = {}, fileUrl, fileName, fileType } = data;  // Destructure here
 
-
-      setTimeout(() => {
-        setConversation((prev) =>
-          prev.map((msg) =>
-            msg.id === placeholderId
-              ? { ...msg, content: assistant_reply || msg.content, loading: false }
-              : msg
-          )
-        );
-      }, 1000);  // Simulate delay
-
       if (data.error) {
         setError(data.error);
         // Update the placeholder with error message
@@ -439,11 +425,8 @@ Feel free to type your question below!`,
           )
         );
       } else {
-        const { assistant_reply, intent = {}, fileUrl, fileName, fileType } = data; // **ADDED**
-
-        // If a file was uploaded, include its URL in the assistant reply
+        // If a file was uploaded, include its URL in the user message
         if (fileUrl && fileName && fileType) { // **ADDED**
-          // Add file information to the user message
           setConversation((prev) =>
             prev.map((msg) =>
               msg.id === userMessage.id
@@ -510,7 +493,8 @@ Feel free to type your question below!`,
     }
   };
 
-  // Row renderer for react-window
+  // Removed react-window Row renderer for simplicity
+  /*
   const Row = ({ index, style }) => {
     const msg = conversation[index];
     return (
@@ -519,6 +503,7 @@ Feel free to type your question below!`,
       </div>
     );
   };
+  */
 
   return (
     <ThemeProvider theme={theme}>
@@ -680,15 +665,11 @@ Feel free to type your question below!`,
                   pr: { xs: 0, sm: 1 },
                 }}
               >
-                {/* Virtualized Chat Messages */}
-                <ListWindow
-                  height={isMobile ? 300 : 500} // Adjust based on screen size
-                  itemCount={conversation.length}
-                  itemSize={300} // Approximate height of each message; adjust as needed
-                  width="100%"
-                >
-                  {Row}
-                </ListWindow>
+                {/* Removed Virtualized Chat Messages for Debugging */}
+                {/* Use standard mapping to render messages */}
+                {conversation.map((msg) => (
+                  <ChatMessage key={msg.id} msg={msg} />
+                ))}
               </Box>
             </ErrorBoundary>
 
@@ -725,7 +706,7 @@ Feel free to type your question below!`,
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                onBlur={() => window.scrollTo(0, document.body.scrollHeight)}  // **OPTIONAL: Consider removing or adjusting**
+                // Removed onBlur to prevent unintended scrolling
                 InputLabelProps={{ style: { color: '#ffffff' } }}
                 InputProps={{
                   style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' },
