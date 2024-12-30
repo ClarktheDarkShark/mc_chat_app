@@ -90,9 +90,13 @@ class ChatBlueprint:
                     # **GENERATE FILE URL**
                     file_url = f"/uploads/{unique_filename}"
                     file_type = file.content_type
+                    file_content = file.read().decode('utf-8')  # Decode for text files
+                    
+                    
                 else:
                     file_url = None
                     file_type = None
+                    file_content = ''
             else:
                 # **HANDLE JSON REQUEST**
                 data = request.get_json()
@@ -244,6 +248,8 @@ class ChatBlueprint:
                     )
                 else:
                     temp_conversation = copy.deepcopy(conversation_history)
+                    temp_conversation[-1]['content'] = (
+                        f'\n{file_content}\n"
 
                 def trim_conversation(conversation, max_tokens=50000):
                     encoding = tiktoken.encoding_for_model(model)
@@ -357,7 +363,7 @@ class ChatBlueprint:
                     'Guidelines:\n'
                     '1. **image_generation** should be True only when an image is requested. Example: "Can you show me a USMC officer saluting?"\n'
                     '2. **image_prompt** should contain the prompt for image generation if **image_generation** is True.\n'
-                    '3. **internet_search** should be True when the user asks for information that might require an internet search.\n'
+                    '3. **internet_search** should be True when the user asks for information that might require an internet search. If asking about an uploaded file, set to False.\n'
                     '4. **favorite_songs** should be True when the user interacts with song-related commands.\n'
                     '5. **active_users** should be True if there is a question about the most active users.\n'
                     '6. **code_intent** should be True when the user is asking about code-related queries or commands starting with "!".\n'
