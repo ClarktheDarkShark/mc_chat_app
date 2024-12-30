@@ -186,23 +186,8 @@ function ChatApp() {
       id: Date.now(),
     };
   
-    // Detect intent based on keywords in user message
-    let loadingText = "Assistant is typing...";  // Default loading text
-    if (message.toLowerCase().includes("search") || message.toLowerCase().includes("look up")) {
-      loadingText = "Searching the internet...";
-    } else if (message.toLowerCase().includes("image") || message.toLowerCase().includes("create image")) {
-      loadingText = "Creating the image...";
-    }
-  
-    // Placeholder for assistant response
-    const assistantPlaceholder = {
-      role: "assistant",
-      content: loadingText,
-      loading: true,
-      id: Date.now() + 1,
-    };
-  
-    setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
+    // Add the user message to the conversation
+    setConversation((prev) => [...prev, userMessage]);
     setMessage("");
     setLoading(true);
   
@@ -230,45 +215,61 @@ function ChatApp() {
   
       if (data.error) {
         setError(data.error);
-        setConversation((prev) => {
-          const updated = [...prev];
-          updated.pop();
-          updated.push({
-            role: "assistant",
-            content: `Error: ${data.error}`,
-            loading: false,
-            id: Date.now() + 2,
-          });
-          return updated;
-        });
+        // Optionally, add an error message from the assistant
+        const errorMessage = {
+          role: "assistant",
+          content: `Error: ${data.error}`,
+          loading: false,
+          id: Date.now() + 2,
+        };
+        setConversation((prev) => [...prev, errorMessage]);
       } else {
-        setConversation((prev) => {
-          const updated = [...prev];
-          updated.pop();
-          updated.push({
-            role: "assistant",
-            content: data.assistant_reply || "No response.",
-            loading: false,
-            id: Date.now() + 3,
-          });
-          return updated;
-        });
+        const { assistant_reply, intent } = data;
+  
+        // Determine the loading text based on intent
+        let loadingText = "Assistant is typing...";  // Default loading text
+        if (intent.internet_search) {
+          loadingText = "Searching the internet...";
+        } else if (intent.image_generation) {
+          loadingText = "Creating the image...";
+        } else if (intent.code_intent) {
+          loadingText = "Processing your code request...";
+        } // Add more conditions based on your intent keys
+  
+        // Add the assistant placeholder with intent-based loading text
+        const assistantPlaceholder = {
+          role: "assistant",
+          content: loadingText,
+          loading: true,
+          id: Date.now() + 1,
+        };
+        setConversation((prev) => [...prev, assistantPlaceholder]);
+  
+        // Simulate delay for realistic typing indicator
+        setTimeout(() => {
+          // Replace the placeholder with the actual assistant reply
+          setConversation((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantPlaceholder.id
+                ? { ...msg, content: assistant_reply, loading: false }
+                : msg
+            )
+          );
+        }, 1000); // Adjust delay as needed
+  
         fetchConversations();
       }
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Check the console.");
-      setConversation((prev) => {
-        const updated = [...prev];
-        updated.pop();
-        updated.push({
-          role: "assistant",
-          content: "Error: Something went wrong.",
-          loading: false,
-          id: Date.now() + 4,
-        });
-        return updated;
-      });
+      // Optionally, add an error message from the assistant
+      const errorMessage = {
+        role: "assistant",
+        content: "Error: Something went wrong.",
+        loading: false,
+        id: Date.now() + 4,
+      };
+      setConversation((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -291,7 +292,7 @@ function ChatApp() {
           minHeight: '100vh',
           p: { xs: 1, sm: 2 },
           display: 'flex',
-          flexDirection: 'column-reverse',
+          flexDirection: 'column', // Changed from 'column-reverse' to 'column'
           justifyContent: 'flex-start',
           border: 'none',
         }}
@@ -303,14 +304,12 @@ function ChatApp() {
             mb: { xs: 2, sm: 4 },
             flexGrow: 1,
             display: 'flex',
-            flexDirection: 'column-reverse',
-            justifyContent: 'flex-end',
+            flexDirection: 'column', // Changed from 'column-reverse' to 'column'
+            justifyContent: 'flex-start',
             height: { xs: 'auto', sm: '80%' },
             border: 'none',
             width: { xs: '100%', sm: '80%', md: '70%' },
             margin: '0 auto',
-            display: 'flex',
-            flexDirection: 'row',
           }}
         >
           {/* Drawer for Chat History */}
@@ -365,8 +364,6 @@ function ChatApp() {
               p: 2,
               ml: drawerOpen ? '240px' : 0,
               transition: 'margin 0.3s',
-              display: 'flex',
-              flexDirection: 'column',
             }}
           >
             {/* Header */}
@@ -461,7 +458,7 @@ function ChatApp() {
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <CircularProgress size={20} color="secondary" />
                         <Typography variant="body2" sx={{ ml: 1 }}>
-                          Assistant is typing...
+                          {msg.content} {/* Display dynamic loading text */}
                         </Typography>
                       </Box>
                     );
