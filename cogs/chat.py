@@ -42,118 +42,133 @@ class ChatBlueprint:
         self.add_routes()
 
     def add_routes(self):
-        @self.bp.route("/chat", methods=["POST"])
-        def chat():
-            data = request.get_json()
-            user_message = data.get("message", "")
-            model = data.get("model", "gpt-4")
-            temperature = data.get("temperature", 0.7)
-            system_prompt = data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
-            additional_instructions = '''You are an AI assistant that generates structured and easy-to-read responses.  
-Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  
-Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  
-Ensure sufficient line breaks between sections to improve readability.'''
-
-            if not user_message:
-                return jsonify({"error": "No message provided"}), 400
-
-            # Ensure session has a unique session_id
-            if 'session_id' not in session:
-                session['session_id'] = str(uuid.uuid4())
-            session_id = session['session_id']
-            
-            # Check if there's a current conversation
-            if 'current_conversation_id' not in session:
-                # Create a new conversation
-                title = "New Conversation"
-                new_convo = Conversation(
-                    session_id=session_id,
-                    title=title
+            @self.bp.route("/chat", methods=["POST"])
+            def chat():
+                data = request.get_json()
+                user_message = data.get("message", "")
+                model = data.get("model", "gpt-4")
+                temperature = data.get("temperature", 0.7)
+                system_prompt = data.get(
+                    "system_prompt",
+                    "You are a USMC AI agent. Provide relevant responses."
                 )
-                db.session.add(new_convo)
-                db.session.commit()
-                session['current_conversation_id'] = new_convo.id
+                additional_instructions = (
+                    "You are an AI assistant that generates structured and easy-to-read responses.  \n"
+                    "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
+                    "Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  \n"
+                    "Ensure sufficient line breaks between sections to improve readability."
+                )
 
-            conversation_id = session.get('current_conversation_id')
-            conversation = Conversation.query.get(conversation_id)
+                if not user_message:
+                    return jsonify({"error": "No message provided"}), 400
 
-            if not conversation or conversation.session_id != session_id:
-                return jsonify({"error": "Conversation not found or unauthorized"}), 404
+                # Ensure session has a unique session_id
+                if 'session_id' not in session:
+                    session['session_id'] = str(uuid.uuid4())
+                session_id = session['session_id']
 
-            # Get messages for the conversation
-            messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
-            conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
+                # Check if there's a current conversation
+                if 'current_conversation_id' not in session:
+                    # Create a new conversation
+                    title = "New Conversation"
+                    new_convo = Conversation(
+                        session_id=session_id,
+                        title=title
+                    )
+                    db.session.add(new_convo)
+                    db.session.commit()
+                    session['current_conversation_id'] = new_convo.id
 
-            # Add system prompt if first message
-            if not conversation_history:
-                conversation_history.append({"role": "system", "content": system_prompt + '\n' + additional_instructions})
+                conversation_id = session.get('current_conversation_id')
+                conversation = Conversation.query.get(conversation_id)
 
-            # Append user message
-            conversation_history.append({"role": "user", "content": user_message})
+                if not conversation or conversation.session_id != session_id:
+                    return jsonify({"error": "Conversation not found or unauthorized"}), 404
 
-            temp_conversation = copy.deepcopy(conversation_history)
+                # Get messages for the conversation
+                messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
+                conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
 
-            # Analyze user intent
-            intent = self.analyze_user_intent(user_message, conversation_history)
-
-            print()
-            print('intent', intent)
-            print()
-
-            # Handle different intents
-            assistant_reply = ""
-            try:
-                if intent.get("image_generation", False):
-                    # Generate Image using DALL-E 3
-                    prompt = intent.get("image_prompt", "")
-                    if prompt:
-                        image_url = self.generate_image(prompt)
-                        assistant_reply = f"![Generated Image]({image_url})"
-                        conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        # Save messages
-                        self.save_messages(conversation_id, "user", user_message)
-                        self.save_messages(conversation_id, "assistant", assistant_reply)
-                    else:
-                        assistant_reply = "No image prompt provided."
-                        conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        self.save_messages(conversation_id, "user", user_message)
-                        self.save_messages(conversation_id, "assistant", assistant_reply)
-                    return jsonify({
-                        "user_message": user_message,
-                        "assistant_reply": assistant_reply,
-                        "conversation_history": conversation_history
+                # Add system prompt if first message
+                if not conversation_history:
+                    conversation_history.append({
+                        "role": "system",
+                        "content": system_prompt + '\n' + additional_instructions
                     })
 
-                elif intent.get("code_intent", False):
-                    # Handle code-related intents
-                    code_content = self.code_files_cog.get_all_code_files_content()
-                    if code_content:
-                        # Append code content to the system prompt
-                        temp_conversation[0]['content'] += "\n\n" + code_content
-                        temp_conversation[-1]['content'] += '\n\nYou have been supplemented with information from your code base to answer this query.'
-                        intent['code_intent'] = True  # Ensure intent shows True
-                    else:
-                        assistant_reply = "No code files found to provide."
-                        conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        self.save_messages(conversation_id, "user", user_message)
-                        self.save_messages(conversation_id, "assistant", assistant_reply)
+                # Append user message
+                conversation_history.append({"role": "user", "content": user_message})
+
+                # Deep copy for temporary modifications
+                temp_conversation = copy.deepcopy(conversation_history)
+
+                # Analyze user intent
+                intent = self.analyze_user_intent(user_message, conversation_history)
+
+                print()
+                print('intent', intent)
+                print()
+
+                # Handle different intents
+                assistant_reply = ""
+                try:
+                    if intent.get("image_generation", False):
+                        # Generate Image using DALL-E 3
+                        prompt = intent.get("image_prompt", "")
+                        if prompt:
+                            image_url = self.generate_image(prompt)
+                            assistant_reply = f"![Generated Image]({image_url})"
+                            conversation_history.append({"role": "assistant", "content": assistant_reply})
+                            # Save messages
+                            self.save_messages(conversation_id, "user", user_message)
+                            self.save_messages(conversation_id, "assistant", assistant_reply)
+                        else:
+                            assistant_reply = "No image prompt provided."
+                            conversation_history.append({"role": "assistant", "content": assistant_reply})
+                            self.save_messages(conversation_id, "user", user_message)
+                            self.save_messages(conversation_id, "assistant", assistant_reply)
                         return jsonify({
                             "user_message": user_message,
                             "assistant_reply": assistant_reply,
                             "conversation_history": conversation_history
                         })
 
-                elif intent.get("internet_search", False):
-                    # Handle internet search (Placeholder)
-                    # Perform web search
-                    query = user_message  # Or extract a specific part of the message
-                    search_content = self.web_search_cog.web_search(user_message, conversation_history)
-                    # print('search_content', search_content)
-                    sys_search_content = f'\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this. Only use the most relevant and accurate information that matches the User Query. Always include the source with the provided url as [source](url)'
+                    elif intent.get("code_intent", False):
+                        # Handle code-related intents
+                        code_content = self.code_files_cog.get_all_code_files_content()
+                        if code_content:
+                            # Append code content to the system prompt
+                            temp_conversation[0]['content'] += "\n\n" + code_content
+                            temp_conversation[-1]['content'] += '\n\nYou have been supplemented with information from your code base to answer this query.'
+                            intent['code_intent'] = True  # Ensure intent shows True
+                        else:
+                            assistant_reply = "No code files found to provide."
+                            conversation_history.append({"role": "assistant", "content": assistant_reply})
+                            self.save_messages(conversation_id, "user", user_message)
+                            self.save_messages(conversation_id, "assistant", assistant_reply)
+                            return jsonify({
+                                "user_message": user_message,
+                                "assistant_reply": assistant_reply,
+                                "conversation_history": conversation_history
+                            })
 
-                    temp_conversation[0]['content'] += sys_search_content
-                    temp_conversation[-1]['content'] = f'\n\nYou are being supplemented with the following information from the internet to answer user query. Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***'
-                else:
+                    elif intent.get("internet_search", False):
+                        # Handle internet search
+                        query = user_message  # Or extract a specific part of the message
+                        search_content = self.web_search_cog.web_search(query, conversation_history)
+                        sys_search_content = (
+                            '\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. '
+                            'Give a confident answer based on this. Only use the most relevant and accurate information that matches the User Query. '
+                            'Always include the source with the provided url as [source](url)'
+                        )
+
+                        # Integrate the internet content into the system prompt
+                        temp_conversation[0]['content'] += sys_search_content
+                        temp_conversation[-1]['content'] = (
+                            '\n\nYou are being supplemented with the following information from the internet to answer user query. '
+                            f"Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***"
+                        )
+               else:
                     temp_conversation = conversation_history
 
                 # Regular Chat Response
