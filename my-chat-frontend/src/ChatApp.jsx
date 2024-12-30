@@ -567,7 +567,7 @@ function ChatApp() {
 
             {/* Footer */}
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
-              *This application can produce incorrect responses.
+              *This is a commercial non-government application and can produce incorrect responses. It is not authorized for CUI data.
             </Typography>
           </Box>
         </Container>

@@ -2,7 +2,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from io import BytesIO
-from PyPDF2 import PdfReader
+from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_bytes
 import pytesseract
 
@@ -43,18 +43,16 @@ def extract_pdf_text(pdf_bytes):
         if reader.is_encrypted:
             print("PDF is detected as encrypted.")
             try:
-                reader.decrypt("")  # Attempt empty password decryption
-                print("Attempted to decrypt PDF with empty password.")
+                # Attempt decryption with empty password
+                decryption_result = reader.decrypt("")
+                if decryption_result == 0:
+                    print("Failed to decrypt PDF with empty password.")
+                    return "[Encrypted PDF - Unable to extract text]"
+                else:
+                    print("PDF was encrypted but successfully decrypted.")
             except Exception as e:
-                print(f"Failed to decrypt PDF: {e}")
+                print(f"Exception during PDF decryption: {e}")
                 return "[Encrypted PDF - Unable to extract text]"
-
-            # Re-check if the PDF is still encrypted after decryption attempt
-            if reader.is_encrypted:
-                print("PDF remains encrypted after decryption attempt.")
-                return "[Encrypted PDF - Unable to extract text]"
-            else:
-                print("PDF was encrypted but successfully decrypted.")
 
         # Extract text from each page
         for page_number, page in enumerate(reader.pages, start=1):
@@ -63,7 +61,7 @@ def extract_pdf_text(pdf_bytes):
                 text += page_text
             else:
                 print(f"Page {page_number} contains no extractable text, attempting OCR...")
-                ocr_text = extract_text_with_ocr(pdf_bytes)
+                ocr_text = extract_text_with_ocr(page)
                 if ocr_text:
                     text += ocr_text
                 else:
@@ -73,19 +71,24 @@ def extract_pdf_text(pdf_bytes):
         return text if text else "[No text extracted from PDF]"
     except Exception as e:
         print(f"Failed to extract text from PDF: {e}")
-        # Optionally, decide whether to attempt OCR here or not
         return "[Failed to extract text from PDF]"
 
 
-def extract_text_with_ocr(pdf_bytes):
-    """Extract text from PDF using OCR (for image-based PDFs)."""
+def extract_text_with_ocr(page):
+    """Extract text from a PDF page using OCR (for image-based PDFs)."""
     try:
         # Check if Tesseract is installed
         if not is_tesseract_installed():
             print("Tesseract OCR is not installed or not found in PATH.")
             return "[OCR not performed: Tesseract not installed]"
 
-        images = convert_from_bytes(pdf_bytes)
+        # Convert single PDF page to image
+        pdf_writer = PdfWriter()
+        pdf_writer.add_page(page)
+        pdf_bytes = BytesIO()
+        pdf_writer.write(pdf_bytes)
+        images = convert_from_bytes(pdf_bytes.getvalue())
+
         text = ""
         for img_number, img in enumerate(images, start=1):
             print(f"Performing OCR on image {img_number}...")
