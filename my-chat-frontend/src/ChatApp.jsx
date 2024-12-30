@@ -335,6 +335,7 @@ Feel free to type your question below!`,
       setError("Please enter a message or upload a file.");
       return;
     }
+    
 
     const userMessage = {
       role: "user",
@@ -413,8 +414,19 @@ Feel free to type your question below!`,
       }
 
       const data = await res.json();
-
       console.log("Response from /api/chat:", data);
+      const { assistant_reply, intent = {}, fileUrl, fileName, fileType } = data;  // Destructure here
+
+
+      setTimeout(() => {
+        setConversation((prev) =>
+          prev.map((msg) =>
+            msg.id === placeholderId
+              ? { ...msg, content: assistant_reply || msg.content, loading: false }
+              : msg
+          )
+        );
+      }, 1000);  // Simulate delay
 
       if (data.error) {
         setError(data.error);
@@ -713,7 +725,7 @@ Feel free to type your question below!`,
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                // onBlur={() => window.scrollTo(0, document.body.scrollHeight)}  // **OPTIONAL: Consider removing or adjusting**
+                onBlur={() => window.scrollTo(0, document.body.scrollHeight)}  // **OPTIONAL: Consider removing or adjusting**
                 InputLabelProps={{ style: { color: '#ffffff' } }}
                 InputProps={{
                   style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' },
