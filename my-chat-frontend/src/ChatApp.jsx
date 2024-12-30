@@ -239,8 +239,8 @@ function ChatApp() {
           >
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant={isMobile ? "h5" : "h4"} color="primary">
-                USMC Agent Demo
+              <Typography variant={isMobile ? "h6" : "h5"} color="primary">
+                USMC AI Agent Demo
               </Typography>
               <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
                 {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
