@@ -19,14 +19,14 @@ def fetch_page_content(url):
         if 'application/pdf' in content_type or url.lower().endswith('.pdf'):
             # Handle PDF content
             pdf_text = extract_pdf_text(response.content)
-            print("\nfetch_page_content (PDF)\n", pdf_text[:500])  # Print first 500 characters
+            print("\nfetch_page_content (PDF)\n", pdf_text[:3000])  # Print first 500 characters
             return pdf_text
         else:
             # Handle HTML content
             soup = BeautifulSoup(response.text, 'html.parser')
             paragraphs = soup.find_all('p')
             content = '\n'.join([para.get_text() for para in paragraphs])
-            print("\nfetch_page_content (HTML)\n", content[:500])  # Print first 500 characters
+            print("\nfetch_page_content (HTML)\n", content[:3000])  # Print first 500 characters
             return content
     except Exception as e:
         print(f"Exception while fetching page content from {url}: {e}")
