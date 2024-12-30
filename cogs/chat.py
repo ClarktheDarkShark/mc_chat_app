@@ -266,17 +266,24 @@ class ChatBlueprint:
                     temp_conversation[-1]['content'] += (f'\n{file_content}\n')
 
                 def trim_conversation(temp_conversation, max_tokens=50000):
-                    print('in trim: temp_conversation', temp_conversation)
-                    encoding = tiktoken.encoding_for_model(model)
+                    print('Before trim: temp_conversation', temp_conversation)
+                    
+                    encoding = tiktoken.encoding_for_model("gpt-4")
                     total_tokens = 0
                     trimmed = []
+                    
                     for message in reversed(temp_conversation):
-                        tokens = len(encoding.encode(message['content']))
-                        total_tokens += tokens
-                        if total_tokens > max_tokens:
+                        message_tokens = len(encoding.encode(json.dumps(message)))
+                        if total_tokens + message_tokens > max_tokens:
                             break
                         trimmed.insert(0, message)
-                    print('In trim 2: temp_conversation', trimmed)
+                        total_tokens += message_tokens
+                    
+                    # Ensure at least one message is included
+                    if not trimmed and temp_conversation:
+                        trimmed.append(temp_conversation[-1])
+                    
+                    print('After trim: temp_conversation', trimmed)
                     return trimmed
                 # Trim the conversation if it exceeds 8000 tokens
                 temp_conversation = trim_conversation(temp_conversation, 50000)
