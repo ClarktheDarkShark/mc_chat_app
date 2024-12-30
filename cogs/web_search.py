@@ -95,7 +95,7 @@ class WebSearchCog:
                     if not items:
                         query += f'This is what you provided last time and resulted in no search results. Try again, but be more general to allow a broader search:\n{optimized_query}'
                         optimized_query = self.generate_search_terms(query, history)
-                                print(f"Second Optimized Query: {optimized_query}")
+                        print(f"Second Optimized Query: {optimized_query}")
                         params = {
                             "key": self.search_api_key,
                             "cx": self.search_engine_id,
