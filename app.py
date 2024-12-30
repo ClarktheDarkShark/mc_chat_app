@@ -3,11 +3,8 @@ import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_session import Session
-from cogs.chat import ChatBlueprint
-from flask_sqlalchemy import SQLAlchemy
-
-# Initialize SQLAlchemy outside the FlaskApp class
-db = SQLAlchemy()
+from db import db  # Import db from db.py
+from cogs.chat import ChatBlueprint  # Import after db to prevent circular import
 
 class FlaskApp:
     def __init__(self):

@@ -1,4 +1,5 @@
 # cogs/chat.py
+from db import db  # Import db from db.py instead of app.py
 import os
 import json
 from flask import Blueprint, request, jsonify, session
@@ -6,7 +7,6 @@ import openai
 import copy
 from .web_search import WebSearchCog
 from .code_files import CodeFilesCog
-from app import db  # Import db from app.py
 from datetime import datetime
 import uuid
 
