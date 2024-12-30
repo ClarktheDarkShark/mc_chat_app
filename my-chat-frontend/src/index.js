@@ -22,6 +22,14 @@ if (process.env.NODE_ENV === "production") {
   };
 }
 
+window.addEventListener("error", function (e) {
+  console.error("Global Error:", e.message, e);
+});
+
+window.addEventListener("unhandledrejection", function (e) {
+  console.error("Unhandled Promise Rejection:", e.reason);
+});
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

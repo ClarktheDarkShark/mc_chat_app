@@ -82,11 +82,12 @@ function ChatApp() {
   // Ref for auto-scroll
   const conversationRef = useRef(null);
   useEffect(() => {
-    console.log("Conversation updated:", conversation);
+    console.log("Scrolling to bottom...");
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
-  }, [conversation]);
+  }, []);  // ✅ Empty dependency to only run on initial render
+  
 
   // 4) Send message logic
   const sendMessage = async () => {
