@@ -103,7 +103,7 @@ class WebSearchCog:
                         }
                         try:
                             response = requests.get(self.search_url, params=params, timeout=10)
-                            if not response.status_code == 200:
+                            if response.status_code != 200:
                                 error_content = response.text
                                 print(f"Error fetching search results: {response.status_code}")
                                 print(f"Error details: {error_content}")
