@@ -33,7 +33,7 @@ class WebSearchCog:
         Use the provided OpenAI client to generate optimized search terms from user input.
         """
         prompt = (
-            f"Generate concise search terms for a Google search based on the user input. Return only the search terms, with no additional formatting or headings. Be as brief and relevant as possible. The current date, if relevant, is {current_date}. Prefer .mil domains when applicable."
+            f"Generate concise search terms for a Google search based on the user input. Return only the search terms, with no additional formatting or headings. Be as brief and relevant as possible. The current date, if relevant, is {current_date}. Prefer .mil domains when applicable. If using quotation marks, only provide one set of quotation marks."
         )
 
         messages = [
