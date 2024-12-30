@@ -241,7 +241,7 @@ function ChatApp() {
         const { assistant_reply, intent = {} } = data;
 
         // Determine the loading text based on intent
-        let loadingText = "Assistant is typing...";  // Default loading text
+        let loadingText = "Assistant is thinking...";  // Default loading text
         if (intent.internet_search) {
           loadingText = "Searching the internet...";
         } else if (intent.image_generation) {
