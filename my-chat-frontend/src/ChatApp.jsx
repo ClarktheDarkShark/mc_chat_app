@@ -87,10 +87,10 @@ function ChatApp() {
       content: `**Welcome to the USMC AI Agent Demo!**  
 I am here to assist you with a variety of tasks. Here are some things you can ask me:
 
-- Summarize the latest news about the Marine Corps.
-- Explain how the intent function in your code provodes user query orchestration.
-- Generate a briefing on amphibious operations.
-- Create an image of Marines conducting an amphibious assault.
+- "Summarize the latest news about the Marine Corps."
+- "Explain how the intent function in your code provodes user query orchestration." 
+- "Generate a briefing on amphibious operations."
+- "Create an image of Marines conducting an amphibious assault."
 
 Feel free to type your question below!`,
       id: "welcome",
@@ -484,7 +484,7 @@ Feel free to type your question below!`,
                 sx={{
                   flexGrow: 1,
                   overflowY: 'auto',
-                  maxHeight: { xs: '70vh', sm: '90vh' },
+                  maxHeight: { xs: '50vh', sm: '70vh' },
                   mb: 1,
                   pr: { xs: 0, sm: 1 },
                 }}
