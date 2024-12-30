@@ -57,7 +57,7 @@ class ChatBlueprint:
                 "You are an AI assistant that generates structured and easy-to-read responses.  \n"
                 "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
                 "Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  \n"
-                "Ensure sufficient line breaks between sections to improve readability."
+                "Ensure sufficient line breaks between sections to improve readability. Generally, limit responses to 500 tokens or less."
             )
 
             if not user_message:
@@ -175,7 +175,7 @@ class ChatBlueprint:
                     temp_conversation = conversation_history
 
                 def trim_conversation(conversation, max_tokens=120000):
-                    encoding = tiktoken.encoding_for_model("gpt-4o")
+                    encoding = tiktoken.encoding_for_model(model)
                     total_tokens = 0
                     trimmed = []
                     for message in reversed(conversation):
@@ -344,7 +344,7 @@ class ChatBlueprint:
             response = self.client.chat.completions.create(
                 model=model,
                 messages=conversation,
-                # max_tokens=max_tokens,  # You might want to set this based on requirements
+                max_tokens=max_tokens,  # You might want to set this based on requirements
                 temperature=temperature
             )
             assistant_reply = response.choices[0].message.content

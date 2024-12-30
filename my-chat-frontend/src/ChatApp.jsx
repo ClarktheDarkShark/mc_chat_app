@@ -419,8 +419,8 @@ function ChatApp() {
                       onChange={(e) => setModel(e.target.value)}
                       sx={{ color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' }}
                     >
-                      <MenuItem value="gpt-4o">gpt-4</MenuItem>
-                      <MenuItem value="gpt-4o-mini">gpt-4-mini</MenuItem>
+                      <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+                      <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
                       <MenuItem value="o1-mini">o1-mini</MenuItem>
                     </Select>
                   </FormControl>
