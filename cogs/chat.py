@@ -168,7 +168,7 @@ class ChatBlueprint:
                         '\n\nYou are being supplemented with the following information from the internet to answer user query. '
                         f"Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***"
                     )
-               else:
+                else:
                     temp_conversation = conversation_history
 
                 # Regular Chat Response
