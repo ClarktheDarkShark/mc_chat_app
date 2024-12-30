@@ -97,6 +97,8 @@ class ChatBlueprint:
                     file_url = None
                     file_type = None
                     file_content = ''
+                print()
+                print('file_content', file_content)
             else:
                 # **HANDLE JSON REQUEST**
                 data = request.get_json()
