@@ -28,14 +28,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import ClearIcon from '@mui/icons-material/Clear';
 import MenuIcon from '@mui/icons-material/Menu';
+import UploadFileIcon from '@mui/icons-material/UploadFile'; // **ADDED**
 
-// Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
-
-// Import react-window for virtualization
 import { FixedSizeList as ListWindow } from 'react-window';
 
-// Minimal Error Boundary to catch rendering errors
+// Import react-icons for upload icon (optional alternative)
+// import { FaUpload } from 'react-icons/fa'; // **OPTIONAL**
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -84,6 +84,7 @@ const ChatMessage = memo(({ msg }) => {
   const isImage =
     msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
   const isAssistant = msg.role === "assistant";
+  const isFile = msg.role === "user" && msg.file; // **ADDED**
 
   let contentToRender;
 
@@ -118,6 +119,37 @@ const ChatMessage = memo(({ msg }) => {
         </Typography>
       );
     }
+  } else if (isFile) { // **ADDED**
+    // Render the uploaded file (assuming it's a PDF or image for simplicity)
+    const fileUrl = msg.fileUrl; // URL to access the uploaded file
+    const fileName = msg.fileName;
+    const fileType = msg.fileType;
+
+    if (fileType.startsWith("image/")) {
+      contentToRender = (
+        <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+          <img
+            src={fileUrl}
+            alt={fileName}
+            style={{ width: '100%', height: 'auto', display: 'block' }}
+          />
+        </Box>
+      );
+    } else if (fileType === "application/pdf") {
+      contentToRender = (
+        <Box sx={{ maxWidth: '70%' }}>
+          <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFD700', textDecoration: 'none' }}>
+            {fileName} (PDF)
+          </a>
+        </Box>
+      );
+    } else {
+      contentToRender = (
+        <Typography variant="body1" color="secondary">
+          {fileName} ({fileType})
+        </Typography>
+      );
+    }
   } else if (isAssistant) {
     contentToRender = (
       <ReactMarkdown>
@@ -135,12 +167,12 @@ const ChatMessage = memo(({ msg }) => {
   return (
     <Box
       sx={{
-        backgroundColor: isImage
+        backgroundColor: isImage || isFile
           ? 'transparent'
           : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
         color: 'white',
         borderRadius: 2,
-        p: isImage ? 0 : 1,
+        p: isImage || isFile ? 0 : 1, // **CHANGED**
         maxWidth: '80%',
         ml: msg.role === "user" ? 'auto' : 0,
         mb: 1,
@@ -156,7 +188,7 @@ function ChatApp() {
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
-  
+
   // Initialize conversation with a welcome message
   const [conversation, setConversation] = useState([
     {
@@ -173,12 +205,13 @@ Feel free to type your question below!`,
       id: "welcome",
     },
   ]);
-  
+
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [conversationsList, setConversationsList] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null); // **ADDED**
 
   // Ref for auto-scroll
   const conversationRef = useRef(null);
@@ -279,11 +312,27 @@ Feel free to type your question below!`,
     }
   };
 
+  // Handle file selection **ADDED**
+  const fileInputRef = useRef(null);
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  // Handle clicking the upload button **ADDED**
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   // Send message logic
   const sendMessage = async () => {
     setError("");
-    if (!message.trim()) {
-      setError("Please enter a message first.");
+    if (!message.trim() && !selectedFile) { // **CHANGED**
+      setError("Please enter a message or upload a file.");
       return;
     }
 
@@ -291,6 +340,10 @@ Feel free to type your question below!`,
       role: "user",
       content: message.trim(),
       id: Date.now(),
+      file: selectedFile ? true : false, // **ADDED**
+      fileName: selectedFile ? selectedFile.name : null, // **ADDED**
+      fileType: selectedFile ? selectedFile.type : null, // **ADDED**
+      fileUrl: null, // **ADDED**
     };
 
     // Generate a unique id for the assistant placeholder
@@ -313,22 +366,46 @@ Feel free to type your question below!`,
     });
 
     setMessage("");
+    setSelectedFile(null); // **ADDED**
     setLoading(true);
 
-    const payload = {
-      message: userMessage.content,
-      model,
-      system_prompt: systemPrompt.trim(),
-      temperature,
-    };
+    // Prepare payload **CHANGED**
+    let payload;
+    let fetchOptions;
 
-    try {
-      const res = await fetch("/api/chat", {
+    if (selectedFile) {
+      // Use FormData to send file
+      payload = new FormData();
+      payload.append("message", message.trim());
+      payload.append("model", model);
+      payload.append("system_prompt", systemPrompt.trim());
+      payload.append("temperature", temperature);
+      payload.append("file", selectedFile); // **ADDED**
+
+      fetchOptions = {
+        method: "POST",
+        body: payload,
+        credentials: "include",
+      };
+    } else {
+      // Send as JSON
+      payload = {
+        message: userMessage.content,
+        model,
+        system_prompt: systemPrompt.trim(),
+        temperature,
+      };
+
+      fetchOptions = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         credentials: "include",
-      });
+      };
+    }
+
+    try {
+      const res = await fetch("/api/chat", fetchOptions); // **CHANGED**
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -350,7 +427,19 @@ Feel free to type your question below!`,
           )
         );
       } else {
-        const { assistant_reply, intent = {} } = data;
+        const { assistant_reply, intent = {}, fileUrl, fileName, fileType } = data; // **ADDED**
+
+        // If a file was uploaded, include its URL in the assistant reply
+        if (fileUrl && fileName && fileType) { // **ADDED**
+          // Add file information to the user message
+          setConversation((prev) =>
+            prev.map((msg) =>
+              msg.id === userMessage.id
+                ? { ...msg, fileUrl, fileName, fileType }
+                : msg
+            )
+          );
+        }
 
         // Determine the loading text based on intent
         let loadingText = "Assistant is thinking...";  // Default loading text
@@ -583,7 +672,7 @@ Feel free to type your question below!`,
                 <ListWindow
                   height={isMobile ? 300 : 500} // Adjust based on screen size
                   itemCount={conversation.length}
-                  itemSize={100} // Approximate height of each message; adjust as needed
+                  itemSize={300} // Approximate height of each message; adjust as needed
                   width="100%"
                 >
                   {Row}
@@ -593,6 +682,28 @@ Feel free to type your question below!`,
 
             {/* Message Input */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                accept="image/*,application/pdf" // Adjust accepted file types as needed
+                style={{ display: 'none' }}
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+              />
+
+              {/* Upload Button */}
+              <IconButton
+                color="primary"
+                onClick={handleUploadClick}
+                sx={{ p: 1 }}
+                aria-label="upload"
+              >
+                <UploadFileIcon />
+                {/* Alternatively, use react-icons */}
+                {/* <FaUpload /> */}
+              </IconButton>
+
+              {/* Text Input */}
               <TextField
                 label="Your Message"
                 variant="outlined"
@@ -602,7 +713,7 @@ Feel free to type your question below!`,
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                onBlur={() => window.scrollTo(0, document.body.scrollHeight)}  // Scroll to bottom on blur
+                // onBlur={() => window.scrollTo(0, document.body.scrollHeight)}  // **OPTIONAL: Consider removing or adjusting**
                 InputLabelProps={{ style: { color: '#ffffff' } }}
                 InputProps={{
                   style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' },
@@ -628,6 +739,13 @@ Feel free to type your question below!`,
                 <ClearIcon />
               </IconButton>
             </Box>
+
+            {/* Display Selected File Name **ADDED** */}
+            {selectedFile && (
+              <Typography variant="body2" sx={{ mt: 1, color: '#FFD700' }}>
+                Selected File: {selectedFile.name}
+              </Typography>
+            )}
 
             {/* Error Display */}
             {error && (

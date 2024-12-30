@@ -2,7 +2,7 @@
 from db import db  # Import db from db.py instead of app.py
 import os
 import json
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, send_from_directory  # **ADDED send_from_directory**
 import openai
 import copy
 from .web_search import WebSearchCog
@@ -11,6 +11,7 @@ from datetime import datetime
 import uuid
 import tiktoken
 import time
+from werkzeug.utils import secure_filename  # **ADDED secure_filename**
 
 # Define Database Models
 class Conversation(db.Model):
@@ -25,6 +26,10 @@ class Message(db.Model):
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    # Optional: Add file fields if desired
+    # file_url = db.Column(db.String(500), nullable=True)      # **OPTIONAL**
+    # file_name = db.Column(db.String(255), nullable=True)     # **OPTIONAL**
+    # file_type = db.Column(db.String(100), nullable=True)     # **OPTIONAL**
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatBlueprint:
@@ -41,28 +46,58 @@ class ChatBlueprint:
         
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
+
+        # **ADDED** Ensure 'uploads' directory exists
+        self.upload_folder = os.path.join(self.app_instance.root_path, 'uploads')
+        if not os.path.exists(self.upload_folder):
+            os.makedirs(self.upload_folder)
+
         self.add_routes()
 
     def add_routes(self):
         @self.bp.route("/chat", methods=["POST"])
         def chat():
-            data = request.get_json()
-            user_message = data.get("message", "")
-            model = data.get("model", "gpt-4o")
-            temperature = data.get("temperature", 0.7)
-            system_prompt = data.get(
-                "system_prompt",
-                "You are a USMC AI agent. Provide relevant responses."
-            )
-            additional_instructions = (
-                "You are an AI assistant that generates structured and easy-to-read responses.  \n"
-                "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
-                "Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  \n"
-                "Ensure sufficient line breaks between sections to improve readability. Generally, limit responses to no more than 1500 tokens."
-            )
+            if request.content_type.startswith('multipart/form-data'):
+                # **HANDLE FILE UPLOAD**
 
-            if not user_message:
-                return jsonify({"error": "No message provided"}), 400
+                # Extract form data
+                user_message = request.form.get("message", "")
+                model = request.form.get("model", "gpt-4o")
+                temperature = float(request.form.get("temperature", 0.7))
+                system_prompt = request.form.get(
+                    "system_prompt",
+                    "You are a USMC AI agent. Provide relevant responses."
+                )
+                file = request.files.get("file", None)
+
+                if file:
+                    # **SECURELY SAVE THE FILE**
+                    filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    file_path = os.path.join(self.upload_folder, unique_filename)
+                    file.save(file_path)
+
+                    # **GENERATE FILE URL**
+                    file_url = f"/uploads/{unique_filename}"
+                    file_type = file.content_type
+                else:
+                    file_url = None
+                    file_type = None
+            else:
+                # **HANDLE JSON REQUEST**
+                data = request.get_json()
+                user_message = data.get("message", "")
+                model = data.get("model", "gpt-4o")
+                temperature = float(data.get("temperature", 0.7))
+                system_prompt = data.get(
+                    "system_prompt",
+                    "You are a USMC AI agent. Provide relevant responses."
+                )
+                file_url = None
+                file_type = None
+
+            if not user_message and not file_url:
+                return jsonify({"error": "No message or file provided"}), 400
 
             # Ensure session has a unique session_id
             if 'session_id' not in session:
@@ -99,10 +134,30 @@ class ChatBlueprint:
                 })
 
             # Append user message
-            conversation_history.append({"role": "user", "content": user_message})
+            if file_url:
+                user_message_entry = {
+                    "role": "user",
+                    "content": user_message,
+                    "fileUrl": file_url,
+                    "fileName": filename,
+                    "fileType": file_type
+                }
+            else:
+                user_message_entry = {"role": "user", "content": user_message}
 
-            # Deep copy for temporary modifications
-            temp_conversation = copy.deepcopy(conversation_history)
+            conversation_history.append(user_message_entry)
+
+            # Save the user message
+            self.save_messages(conversation_id, "user", user_message)
+
+            # **ADDED** Save file info in the message (Optional)
+            if file_url:
+                # Assuming you want to store file information in the message content as JSON or formatted text
+                # Here, we'll append the file URL to the message content
+                last_message = Message.query.filter_by(conversation_id=conversation_id, role="user").order_by(Message.timestamp.desc()).first()
+                if last_message:
+                    last_message.content = f"{user_message}\n\n[Uploaded File]({file_url})"
+                    db.session.commit()
 
             # Analyze user intent
             intent = self.analyze_user_intent(user_message, conversation_history)
@@ -122,18 +177,19 @@ class ChatBlueprint:
                         assistant_reply = f"![Generated Image]({image_url})"
                         conversation_history.append({"role": "assistant", "content": assistant_reply})
                         # Save messages
-                        self.save_messages(conversation_id, "user", user_message)
                         self.save_messages(conversation_id, "assistant", assistant_reply)
                     else:
                         assistant_reply = "No image prompt provided."
                         conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        self.save_messages(conversation_id, "user", user_message)
                         self.save_messages(conversation_id, "assistant", assistant_reply)
                     return jsonify({
                         "user_message": user_message,
                         "assistant_reply": assistant_reply,
                         "conversation_history": conversation_history,
-                        "intent": intent 
+                        "intent": intent,
+                        "fileUrl": file_url,         # **ADDED**
+                        "fileName": filename if file_url else None,   # **ADDED**
+                        "fileType": file_type if file_url else None    # **ADDED**
                     })
 
                 elif intent.get("code_intent", False):
@@ -141,19 +197,22 @@ class ChatBlueprint:
                     code_content = self.code_files_cog.get_all_code_files_content()
                     if code_content:
                         # Append code content to the system prompt
+                        temp_conversation = copy.deepcopy(conversation_history)
                         temp_conversation[0]['content'] += "\n\n" + code_content
                         temp_conversation[-1]['content'] += '\n\nYou have been supplemented with information from your code base to answer this query.'
                         intent['code_intent'] = True  # Ensure intent shows True
                     else:
                         assistant_reply = "No code files found to provide."
                         conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        self.save_messages(conversation_id, "user", user_message)
                         self.save_messages(conversation_id, "assistant", assistant_reply)
                         return jsonify({
                             "user_message": user_message,
                             "assistant_reply": assistant_reply,
                             "conversation_history": conversation_history,
-                            "intent": intent 
+                            "intent": intent,
+                            "fileUrl": file_url,         # **ADDED**
+                            "fileName": filename if file_url else None,   # **ADDED**
+                            "fileType": file_type if file_url else None    # **ADDED**
                         })
 
                 elif intent.get("internet_search", False):
@@ -167,13 +226,14 @@ class ChatBlueprint:
                     )
 
                     # Integrate the internet content into the system prompt
+                    temp_conversation = copy.deepcopy(conversation_history)
                     temp_conversation[0]['content'] += sys_search_content
                     temp_conversation[-1]['content'] = (
                         '\n\nYou are being supplemented with the following information from the internet to answer user query. '
                         f"Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***"
                     )
                 else:
-                    temp_conversation = conversation_history
+                    temp_conversation = copy.deepcopy(conversation_history)
 
                 def trim_conversation(conversation, max_tokens=50000):
                     encoding = tiktoken.encoding_for_model(model)
@@ -190,9 +250,6 @@ class ChatBlueprint:
                 temp_conversation = trim_conversation(temp_conversation, 50000)
 
                 # Regular Chat Response
-                # print()
-                # print('***************************************************************************************************************')
-                # print('temp_conversation', temp_conversation)
                 print('***************************************************************************************************************')
                 print()
                 start_time = time.time()
@@ -208,15 +265,16 @@ class ChatBlueprint:
                 conversation_history.append({"role": "assistant", "content": assistant_reply})
                 # Save messages
 
-                self.save_messages(conversation_id, "user", user_message)
                 self.save_messages(conversation_id, "assistant", assistant_reply)
-
 
                 return jsonify({
                     "user_message": user_message,
                     "assistant_reply": assistant_reply,
                     "conversation_history": conversation_history,
-                    "intent": intent 
+                    "intent": intent,
+                    "fileUrl": file_url,         # **ADDED**
+                    "fileName": filename if file_url else None,   # **ADDED**
+                    "fileType": file_type if file_url else None    # **ADDED**
                 })
 
             except Exception as e:
@@ -361,4 +419,3 @@ class ChatBlueprint:
             print(f'Error in chat response generation: {e}')
             print()
             return "Error generating response."
-
