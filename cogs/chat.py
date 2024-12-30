@@ -70,6 +70,13 @@ class ChatBlueprint:
                     "system_prompt",
                     "You are a USMC AI agent. Provide relevant responses."
                 )
+                additional_instructions = (
+                "You are an AI assistant that generates structured and easy-to-read responses.  \n"
+                "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
+                "Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  \n"
+                "Ensure sufficient line breaks between sections to improve readability. Generally, limit responses to no more than 1500 tokens."
+            )
+
                 file = request.files.get("file", None)
 
                 if file:
