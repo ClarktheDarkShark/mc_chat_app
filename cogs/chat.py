@@ -130,7 +130,8 @@ class ChatBlueprint:
                     return jsonify({
                         "user_message": user_message,
                         "assistant_reply": assistant_reply,
-                        "conversation_history": conversation_history
+                        "conversation_history": conversation_history,
+                        "intent": intent 
                     })
 
                 elif intent.get("code_intent", False):
@@ -149,7 +150,8 @@ class ChatBlueprint:
                         return jsonify({
                             "user_message": user_message,
                             "assistant_reply": assistant_reply,
-                            "conversation_history": conversation_history
+                            "conversation_history": conversation_history,
+                            "intent": intent 
                         })
 
                 elif intent.get("internet_search", False):
@@ -191,7 +193,8 @@ class ChatBlueprint:
                 return jsonify({
                     "user_message": user_message,
                     "assistant_reply": assistant_reply,
-                    "conversation_history": conversation_history
+                    "conversation_history": conversation_history,
+                    "intent": intent 
                 })
 
             except Exception as e:
