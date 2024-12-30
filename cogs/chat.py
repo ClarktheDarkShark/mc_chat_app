@@ -344,7 +344,7 @@ class ChatBlueprint:
             response = self.client.chat.completions.create(
                 model=model,
                 messages=conversation,
-                max_tokens=max_tokens,  # You might want to set this based on requirements
+                max_tokens=1000,  # You might want to set this based on requirements
                 temperature=temperature
             )
             assistant_reply = response.choices[0].message.content
