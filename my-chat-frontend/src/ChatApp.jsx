@@ -577,6 +577,7 @@ Feel free to type your question below!`,
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
+                onBlur={() => window.scrollTo(0, document.body.scrollHeight)}  // Scroll to bottom on blur
                 InputLabelProps={{ style: { color: '#ffffff' } }}
                 InputProps={{
                   style: { color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' },
