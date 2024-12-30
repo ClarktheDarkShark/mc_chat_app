@@ -12,7 +12,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Paper,
   CircularProgress,
   TextField,
   useTheme,
@@ -30,10 +29,10 @@ import SendIcon from '@mui/icons-material/Send';
 import ClearIcon from '@mui/icons-material/Clear';
 import MenuIcon from '@mui/icons-material/Menu';
 
-// 1) Import react-markdown for assistant message rendering
+// Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
 
-// 2) Minimal Error Boundary to catch rendering errors
+// Minimal Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -99,7 +98,7 @@ function ChatApp() {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
 
-  // 1. Fetch chat history on component mount
+  // Fetch chat history on component mount
   useEffect(() => {
     fetchConversations();
   }, []);
@@ -124,7 +123,7 @@ function ChatApp() {
     }
   };
 
-  // 2. Handle selecting a conversation
+  // Handle selecting a conversation
   const selectConversation = async (convo) => {
     try {
       const res = await fetch(`/api/conversations/${convo.id}`, {
@@ -146,7 +145,7 @@ function ChatApp() {
     }
   };
 
-  // 3. Handle starting a new conversation
+  // Handle starting a new conversation
   const startNewConversation = async () => {
     try {
       const res = await fetch("/api/conversations/new", {
@@ -172,32 +171,45 @@ function ChatApp() {
     }
   };
 
-  // 4) Send message logic
+  // Send message logic
   const sendMessage = async () => {
     setError("");
     if (!message.trim()) {
       setError("Please enter a message first.");
       return;
     }
-  
+
     const userMessage = {
       role: "user",
       content: message.trim(),
       id: Date.now(),
     };
-  
-    // Add the user message to the conversation
-    setConversation((prev) => [...prev, userMessage]);
+
+    // Generate a unique id for the assistant placeholder
+    const placeholderId = Date.now() + 1;
+
+    // Add the user message and assistant placeholder to the conversation
+    setConversation((prev) => [
+      ...prev,
+      userMessage,
+      {
+        role: "assistant",
+        content: "Assistant is typing...", // Initial loading text
+        loading: true,
+        id: placeholderId,
+      },
+    ]);
+
     setMessage("");
     setLoading(true);
-  
+
     const payload = {
       message: userMessage.content,
       model,
       system_prompt: systemPrompt.trim(),
       temperature,
     };
-  
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -205,27 +217,29 @@ function ChatApp() {
         body: JSON.stringify(payload),
         credentials: "include",
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to fetch.");
       }
-  
+
       const data = await res.json();
-  
+
+      console.log("Response from /api/chat:", data);
+
       if (data.error) {
         setError(data.error);
-        // Optionally, add an error message from the assistant
-        const errorMessage = {
-          role: "assistant",
-          content: `Error: ${data.error}`,
-          loading: false,
-          id: Date.now() + 2,
-        };
-        setConversation((prev) => [...prev, errorMessage]);
+        // Update the placeholder with error message
+        setConversation((prev) =>
+          prev.map((msg) =>
+            msg.id === placeholderId
+              ? { ...msg, content: `Error: ${data.error}`, loading: false }
+              : msg
+          )
+        );
       } else {
-        const { assistant_reply, intent } = data;
-  
+        const { assistant_reply, intent = {} } = data;
+
         // Determine the loading text based on intent
         let loadingText = "Assistant is typing...";  // Default loading text
         if (intent.internet_search) {
@@ -235,48 +249,47 @@ function ChatApp() {
         } else if (intent.code_intent) {
           loadingText = "Processing your code request...";
         } // Add more conditions based on your intent keys
-  
-        // Add the assistant placeholder with intent-based loading text
-        const assistantPlaceholder = {
-          role: "assistant",
-          content: loadingText,
-          loading: true,
-          id: Date.now() + 1,
-        };
-        setConversation((prev) => [...prev, assistantPlaceholder]);
-  
+
+        // Update the placeholder with the specific loading text
+        setConversation((prev) =>
+          prev.map((msg) =>
+            msg.id === placeholderId
+              ? { ...msg, content: loadingText }
+              : msg
+          )
+        );
+
         // Simulate delay for realistic typing indicator
         setTimeout(() => {
           // Replace the placeholder with the actual assistant reply
           setConversation((prev) =>
             prev.map((msg) =>
-              msg.id === assistantPlaceholder.id
+              msg.id === placeholderId
                 ? { ...msg, content: assistant_reply, loading: false }
                 : msg
             )
           );
         }, 1000); // Adjust delay as needed
-  
+
         fetchConversations();
       }
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Check the console.");
-      // Optionally, add an error message from the assistant
-      const errorMessage = {
-        role: "assistant",
-        content: "Error: Something went wrong.",
-        loading: false,
-        id: Date.now() + 4,
-      };
-      setConversation((prev) => [...prev, errorMessage]);
+      // Update the placeholder with error message
+      setConversation((prev) =>
+        prev.map((msg) =>
+          msg.id === placeholderId
+            ? { ...msg, content: "Error: Something went wrong.", loading: false }
+            : msg
+        )
+      );
     } finally {
       setLoading(false);
     }
   };
-  
 
-  // 5) Handle Enter key in multiline TextField
+  // Handle Enter key in multiline TextField
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -292,7 +305,7 @@ function ChatApp() {
           minHeight: '100vh',
           p: { xs: 1, sm: 2 },
           display: 'flex',
-          flexDirection: 'column', // Changed from 'column-reverse' to 'column'
+          flexDirection: 'column',
           justifyContent: 'flex-start',
           border: 'none',
         }}
@@ -304,7 +317,7 @@ function ChatApp() {
             mb: { xs: 2, sm: 4 },
             flexGrow: 1,
             display: 'flex',
-            flexDirection: 'column', // Changed from 'column-reverse' to 'column'
+            flexDirection: 'column',
             justifyContent: 'flex-start',
             height: { xs: 'auto', sm: '80%' },
             border: 'none',
@@ -443,7 +456,7 @@ function ChatApp() {
                   pr: { xs: 0, sm: 1 },
                 }}
               >
-                {/* 6) Render each message as a simple Box (no <Fade> or <List>) */}
+                {/* Render each message as a simple Box */}
                 {conversation.map((msg) => {
                   console.log(`Rendering message ${msg.id}:`, msg.content);
 
