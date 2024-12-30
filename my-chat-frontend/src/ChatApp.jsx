@@ -14,7 +14,9 @@ import {
   MenuItem,
   Paper,
   CircularProgress,
-  TextField
+  TextField,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
@@ -84,6 +86,10 @@ function ChatApp() {
     }
   }, [conversation]);
 
+  // Theme and Media Query for responsive Typography
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
+
   // 3) Send message logic
   const sendMessage = async () => {
     setError("");
@@ -121,11 +127,18 @@ function ChatApp() {
     };
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/chat", {  // Ensure this endpoint is correct
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      // Check if response is OK
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch.");
+      }
+
       const data = await res.json();
 
       if (data.error) {
@@ -198,7 +211,7 @@ function ChatApp() {
       >
         {/* 5) Container Setup */}
         <Container
-          maxWidth={{ xs: 'xs', sm: 'md', lg: 'lg' }}
+          maxWidth="lg"
           sx={{
             mb: { xs: 2, sm: 4 },
             flexGrow: 1,
@@ -207,6 +220,8 @@ function ChatApp() {
             justifyContent: 'flex-end',
             height: { xs: 'auto', sm: '80%' },
             border: 'none',
+            width: { xs: '100%', sm: '80%', md: '70%' },
+            margin: '0 auto',
           }}
         >
           <Paper
@@ -214,8 +229,6 @@ function ChatApp() {
             sx={{
               p: { xs: 1, sm: 2 },
               borderRadius: 3,
-              maxWidth: '100%',
-              margin: '0 auto',
               backgroundColor: 'background.paper',
               display: 'flex',
               flexDirection: 'column',
@@ -226,7 +239,7 @@ function ChatApp() {
           >
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant={{ xs: 'h6', sm: 'h5', md: 'h4' }} color="primary">
+              <Typography variant={isMobile ? "h5" : "h4"} color="primary">
                 USMC Agent Demo
               </Typography>
               <IconButton onClick={() => setSettingsOpen(!settingsOpen)} color="primary" size="small">
