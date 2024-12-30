@@ -1,10 +1,10 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from io import BytesIO
 from PyPDF2 import PdfReader
 from pdf2image import convert_from_bytes
 import pytesseract
-
 
 def fetch_page_content(url):
     """Fetch and extract text content from a webpage or PDF."""
@@ -41,42 +41,76 @@ def extract_pdf_text(pdf_bytes):
 
         # Handle encrypted PDFs
         if reader.is_encrypted:
+            print("PDF is detected as encrypted.")
             try:
                 reader.decrypt("")  # Attempt empty password decryption
-                print("PDF was encrypted but successfully decrypted.")
+                print("Attempted to decrypt PDF with empty password.")
             except Exception as e:
                 print(f"Failed to decrypt PDF: {e}")
                 return "[Encrypted PDF - Unable to extract text]"
 
-        # Extract text from each page
-        for page in reader.pages:
-            if page.extract_text():
-                text += page.extract_text()
+            # Re-check if the PDF is still encrypted after decryption attempt
+            if reader.is_encrypted:
+                print("PDF remains encrypted after decryption attempt.")
+                return "[Encrypted PDF - Unable to extract text]"
             else:
-                print("Page contains no extractable text, attempting OCR...")
+                print("PDF was encrypted but successfully decrypted.")
+
+        # Extract text from each page
+        for page_number, page in enumerate(reader.pages, start=1):
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text
+            else:
+                print(f"Page {page_number} contains no extractable text, attempting OCR...")
                 ocr_text = extract_text_with_ocr(pdf_bytes)
-                return ocr_text
+                if ocr_text:
+                    text += ocr_text
+                else:
+                    print(f"OCR failed for page {page_number}.")
+                    text += f"\n[No text extracted from page {page_number}]"
 
         return text if text else "[No text extracted from PDF]"
     except Exception as e:
         print(f"Failed to extract text from PDF: {e}")
-        return extract_text_with_ocr(pdf_bytes)  # Fallback to OCR if extraction fails
+        # Optionally, decide whether to attempt OCR here or not
+        return "[Failed to extract text from PDF]"
 
 
 def extract_text_with_ocr(pdf_bytes):
     """Extract text from PDF using OCR (for image-based PDFs)."""
     try:
+        # Check if Tesseract is installed
+        if not is_tesseract_installed():
+            print("Tesseract OCR is not installed or not found in PATH.")
+            return "[OCR not performed: Tesseract not installed]"
+
         images = convert_from_bytes(pdf_bytes)
         text = ""
-        for img in images:
-            text += pytesseract.image_to_string(img)
+        for img_number, img in enumerate(images, start=1):
+            print(f"Performing OCR on image {img_number}...")
+            extracted_text = pytesseract.image_to_string(img)
+            if extracted_text:
+                text += extracted_text
+            else:
+                print(f"OCR returned no text for image {img_number}.")
         return text if text else "[OCR could not extract text]"
     except Exception as e:
         print(f"OCR extraction failed: {e}")
         return "[Failed to extract text with OCR]"
 
 
+def is_tesseract_installed():
+    """Check if Tesseract OCR is installed and accessible."""
+    from shutil import which
+    return which('tesseract') is not None
+
+
 # Example usage
 if __name__ == "__main__":
     url = "https://www.marines.mil/Portals/1/Publications/USMC%20AI%20STRATEGY%20(SECURED).pdf"
-    print(fetch_page_content(url))
+    content = fetch_page_content(url)
+    if content:
+        print("\nExtracted Content:\n", content[:1000])  # Print first 1000 characters
+    else:
+        print("No content extracted.")
