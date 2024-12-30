@@ -4,6 +4,7 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_session import Session
 from db import db  # Import db from db.py
+from flask_migrate import Migrate
 from cogs.chat import ChatBlueprint  # Import after db to prevent circular import
 
 class FlaskApp:
@@ -24,6 +25,9 @@ class FlaskApp:
         # Initialize the database
         db.init_app(self.app)
 
+        # Initialize Flask-Migrate
+        self.migrate = Migrate(self.app, db)
+
         # Register blueprint
         chat_blueprint = ChatBlueprint(self)
         self.app.register_blueprint(chat_blueprint.bp, url_prefix="/api")
@@ -31,9 +35,8 @@ class FlaskApp:
         # Add routes
         self.add_routes()
 
-        # Create database tables
-        with self.app.app_context():
-            db.create_all()
+        # Create database tables using migrations
+        # Remove db.create_all()
 
     def add_routes(self):
         @self.app.route("/")
