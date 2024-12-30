@@ -15,22 +15,26 @@ class FlaskApp:
         self.app.config['SESSION_PERMANENT'] = False
 
         # Database configuration
-        # Use DATABASE_URL from environment; no fallback to SQLite
-        print()
-        print('Getting DB credentials...')
+        print("\nGetting DB credentials...")
         uri = os.getenv("DATABASE_URL")  # Get Heroku's default DATABASE_URL
-        if uri and uri.startswith("postgres://"):
-            uri = uri.replace("postgres://", "postgresql://", 1)
-        self.app.config["SQLALCHEMY_DATABASE_URI"] = uri
-        # self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-        print("self.app.config['SQLALCHEMY_DATABASE_URI']", self.app.config['SQLALCHEMY_DATABASE_URI'])
+
+        if uri:
+            # Replace 'postgres://' with 'postgresql://' for SQLAlchemy compatibility
+            if uri.startswith("postgres://"):
+                uri = uri.replace("postgres://", "postgresql://", 1)
+            self.app.config["SQLALCHEMY_DATABASE_URI"] = uri
+            print("self.app.config['SQLALCHEMY_DATABASE_URI']", self.app.config['SQLALCHEMY_DATABASE_URI'])
+        else:
+            # Fallback to local SQLite database for development
+            self.app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///local.db'
+            print("Using local SQLite database:", self.app.config["SQLALCHEMY_DATABASE_URI"])
+
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+        # Initialize extensions
         CORS(self.app, supports_credentials=True)
         Session(self.app)  # Initialize server-side sessions
-
-        # Initialize the database
-        db.init_app(self.app)
+        db.init_app(self.app)  # Initialize the database
 
         # Initialize Flask-Migrate
         self.migrate = Migrate(self.app, db)
@@ -42,9 +46,6 @@ class FlaskApp:
         # Add routes
         self.add_routes()
 
-        # Create database tables using migrations
-        # Remove db.create_all()
-
     def add_routes(self):
         @self.app.route("/")
         def index():
@@ -52,6 +53,7 @@ class FlaskApp:
 
         @self.app.route("/<path:path>")
         def static_proxy(path):
+            # Serve static files if they exist, else serve index.html (for SPA routing)
             if os.path.exists(os.path.join(self.app.static_folder, path)):
                 return send_from_directory(self.app.static_folder, path)
             return send_from_directory(self.app.static_folder, 'index.html')
