@@ -40,8 +40,9 @@ class FlaskApp:
         self.migrate = Migrate(self.app, db)
 
         # Register blueprint
-        chat_blueprint = ChatBlueprint(self)
+        chat_blueprint = ChatBlueprint(self, self.app)  # Pass the Flask app instance
         self.app.register_blueprint(chat_blueprint.bp, url_prefix="/api")
+
 
         # Add routes
         self.add_routes()

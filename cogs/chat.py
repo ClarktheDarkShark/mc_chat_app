@@ -33,7 +33,7 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatBlueprint:
-    def __init__(self, app_instance):
+    def __init__(self, app_instance, flask_app):
         self.bp = Blueprint("chat_blueprint", __name__)
         
         # Initialize OpenAI client properly
@@ -49,7 +49,7 @@ class ChatBlueprint:
 
         # **ADDED** Ensure 'uploads' directory exists
         # self.upload_folder = os.path.join(self.app_instance.root_path, 'uploads')
-        self.upload_folder = os.path.join(self.app_instance.instance_path, 'uploads')
+        self.upload_folder = os.path.join(flask_app.instance_path, 'uploads')
 
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
