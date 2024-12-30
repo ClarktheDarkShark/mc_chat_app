@@ -59,6 +59,7 @@ class ChatBlueprint:
     def add_routes(self):
         @self.bp.route("/chat", methods=["POST"])
         def chat():
+            file_content = ''
             additional_instructions = (
                 "You are an AI assistant that generates structured and easy-to-read responses.  \n"
                 "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
@@ -92,7 +93,7 @@ class ChatBlueprint:
 
                     # Read the file content
                     try:
-                        file_content = file.read(1024 * 1024)  # Limit read to 1MB
+                        file_content = file.read().decode('utf-8', errors='ignore') 
                     except Exception as e:
                         file_content = "Could not read file content."
                         print("Error reading file:", e)
