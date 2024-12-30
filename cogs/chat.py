@@ -78,19 +78,19 @@ class ChatBlueprint:
                 )
 
 
-                file = request.files.get("file", None)
+                f = request.files.get("file", None)
 
-                if file:
+                if f:
                     # **SECURELY SAVE THE FILE**
-                    filename = secure_filename(file.filename)
+                    filename = secure_filename(f.filename)
                     unique_filename = f"{uuid.uuid4()}_{filename}"
                     file_path = os.path.join(self.upload_folder, unique_filename)
-                    file.save(file_path)
+                    f.save(file_path)
 
                     # **GENERATE FILE URL**
                     file_url = f"/uploads/{unique_filename}"
-                    file_type = file.content_type
-                    file_content = file.read().decode('utf-8')  # Decode for text files
+                    file_type = f.content_type
+                    file_content = f.read().decode('utf-8')  # Decode for text files
                     
                     
                 else:
