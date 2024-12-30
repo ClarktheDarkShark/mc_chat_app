@@ -356,8 +356,9 @@ Feel free to type your question below!`,
             justifyContent: 'flex-start',
             height: { xs: 'auto', sm: '80%' },
             border: 'none',
-            width: { xs: '100%', sm: '80%', md: '70%' },
-            margin: '0 auto',
+            width: '100%',
+            padding: '0',
+            margin: '0',
           }}
         >
           {/* Drawer for Chat History */}
@@ -484,7 +485,7 @@ Feel free to type your question below!`,
                 sx={{
                   flexGrow: 1,
                   overflowY: 'auto',
-                  maxHeight: { xs: '70vh', sm: '90vh' },
+                  maxHeight: { xs: '70vh', sm: '80vh' },
                   mb: 1,
                   pr: { xs: 0, sm: 1 },
                 }}
