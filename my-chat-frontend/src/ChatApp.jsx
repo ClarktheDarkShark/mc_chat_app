@@ -194,7 +194,7 @@ function ChatApp() {
       userMessage,
       {
         role: "assistant",
-        content: "Assistant is typing...", // Initial loading text
+        content: "Assistant is thinking...", // Initial loading text
         loading: true,
         id: placeholderId,
       },
