@@ -18,7 +18,11 @@ class FlaskApp:
         # Use DATABASE_URL from environment; no fallback to SQLite
         print()
         print('Getting DB credentials...')
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+        uri = os.getenv("DATABASE_URL")  # Get Heroku's default DATABASE_URL
+        if uri and uri.startswith("postgres://"):
+            uri = uri.replace("postgres://", "postgresql://", 1)
+        self.app.config["SQLALCHEMY_DATABASE_URI"] = uri
+        # self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
         print("self.app.config['SQLALCHEMY_DATABASE_URI']", self.app.config['SQLALCHEMY_DATABASE_URI'])
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
