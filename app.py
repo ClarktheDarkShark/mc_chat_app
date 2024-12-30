@@ -14,8 +14,8 @@ class FlaskApp:
         self.app.config['SESSION_PERMANENT'] = False
 
         # Database configuration
-        # Use DATABASE_URL from environment or default to SQLite
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///chat_history.db')
+        # Use DATABASE_URL from environment; no fallback to SQLite
+        self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
         CORS(self.app, supports_credentials=True)
