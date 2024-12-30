@@ -47,7 +47,7 @@ class ChatBlueprint:
         def chat():
             data = request.get_json()
             user_message = data.get("message", "")
-            model = data.get("model", "gpt-4")
+            model = data.get("model", "gpt-4o")
             temperature = data.get("temperature", 0.7)
             system_prompt = data.get(
                 "system_prompt",
@@ -174,8 +174,8 @@ class ChatBlueprint:
                 else:
                     temp_conversation = conversation_history
 
-                def trim_conversation(conversation, max_tokens=8000):
-                    encoding = tiktoken.encoding_for_model("gpt-4")
+                def trim_conversation(conversation, max_tokens=120000):
+                    encoding = tiktoken.encoding_for_model("gpt-4o")
                     total_tokens = 0
                     trimmed = []
                     for message in reversed(conversation):
@@ -186,7 +186,7 @@ class ChatBlueprint:
                         trimmed.insert(0, message)
                     return trimmed
                 # Trim the conversation if it exceeds 8000 tokens
-                temp_conversation = trim_conversation(temp_conversation, 8000)
+                temp_conversation = trim_conversation(temp_conversation, 120000)
 
                 # Regular Chat Response
                 print()

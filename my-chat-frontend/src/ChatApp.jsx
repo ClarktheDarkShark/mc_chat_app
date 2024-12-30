@@ -76,7 +76,7 @@ const theme = createTheme({
 
 function ChatApp() {
   const [message, setMessage] = useState("");
-  const [model, setModel] = useState("gpt-4");
+  const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
   const [conversation, setConversation] = useState([]);
@@ -419,11 +419,9 @@ function ChatApp() {
                       onChange={(e) => setModel(e.target.value)}
                       sx={{ color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' }}
                     >
-                      <MenuItem value="gpt-4">gpt-4</MenuItem>
-                      <MenuItem value="gpt-4-mini">gpt-4-mini</MenuItem>
+                      <MenuItem value="gpt-4o">gpt-4</MenuItem>
+                      <MenuItem value="gpt-4o-mini">gpt-4-mini</MenuItem>
                       <MenuItem value="o1-mini">o1-mini</MenuItem>
-                      <MenuItem value="o1-preview">o1-preview</MenuItem>
-                      <MenuItem value="dalle-3">DALL-E 3</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
