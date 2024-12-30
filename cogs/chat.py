@@ -117,9 +117,9 @@ class ChatBlueprint:
                     # # Read the file content
                     # try:file_content = file.read().decode('utf-8', errors='ignore') 
                         
-                    except Exception as e:
-                        file_content = "Could not read file content."
-                        print("Error reading file:", e)
+                    # except Exception as e:
+                    #     file_content = "Could not read file content."
+                    #     print("Error reading file:", e)
 
                     # **GENERATE FILE URL**
                     file_url = f"/uploads/{unique_filename}"
