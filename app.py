@@ -19,7 +19,7 @@ class FlaskApp:
         print()
         print('Getting DB credentials...')
         self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-        print('self.app.config['SQLALCHEMY_DATABASE_URI']', self.app.config['SQLALCHEMY_DATABASE_URI'])
+        print("self.app.config['SQLALCHEMY_DATABASE_URI']", self.app.config['SQLALCHEMY_DATABASE_URI'])
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
         CORS(self.app, supports_credentials=True)
