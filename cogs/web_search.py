@@ -28,6 +28,7 @@ class WebSearchCog:
         self.search_engine_id = os.getenv('SEARCH_ENGINE_ID')
         self.search_url = "https://www.googleapis.com/customsearch/v1"
 
+
     def generate_search_terms(self, user_input, history):
         """
         Use the provided OpenAI client to generate optimized search terms from user input.

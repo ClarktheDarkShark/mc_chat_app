@@ -148,8 +148,8 @@ Ensure sufficient line breaks between sections to improve readability.'''
                     # Perform web search
                     query = user_message  # Or extract a specific part of the message
                     search_content = self.web_search_cog.web_search(user_message, conversation_history)
-                    print('search_content', search_content)
-                    sys_search_content = f'\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this. Only use the most relevant and accurate information that matches the User Query.'
+                    # print('search_content', search_content)
+                    sys_search_content = f'\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this. Only use the most relevant and accurate information that matches the User Query. Always include the source with the provided url as [source](url)'
 
                     temp_conversation[0]['content'] += sys_search_content
                     temp_conversation[-1]['content'] = f'\n\nYou are being supplemented with the following information from the internet to answer user query. Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***'
