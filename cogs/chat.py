@@ -266,6 +266,7 @@ class ChatBlueprint:
                     temp_conversation[-1]['content'] += (f'\n{file_content}\n')
 
                 def trim_conversation(temp_conversation, max_tokens=50000):
+                    print('in trim: temp_conversation', temp_conversation)
                     encoding = tiktoken.encoding_for_model(model)
                     total_tokens = 0
                     trimmed = []
@@ -275,6 +276,7 @@ class ChatBlueprint:
                         if total_tokens > max_tokens:
                             break
                         trimmed.insert(0, message)
+                    print('In trim 2: temp_conversation', trimmed)
                     return trimmed
                 # Trim the conversation if it exceeds 8000 tokens
                 temp_conversation = trim_conversation(temp_conversation, 50000)
