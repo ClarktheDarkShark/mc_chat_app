@@ -35,15 +35,17 @@ class WebSearchCog:
         prompt = (
             f"Prepare key search terms for a Google internet search based on the user input and conversation history. This should be extremely short and useful in an internet search. The current date, if relevent, is {current_date}. Rarely include the date, only when absolutely essetial. Do not include the date if 'recent' is included. Prefer .mil domains."
         )
-
-        try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # Specify the desired model
-                messages=[
+        messages = [
                     {"role": "system", "content": prompt},
                     *history,
                     {"role": "user", "content": f"User Input: {user_input}\n"}
-                ],
+                ]
+
+        try:
+            print('messages', messages)
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",  # Specify the desired model
+                messages=messages,
                 max_tokens=60,
                 n=1,
                 stop=None,
