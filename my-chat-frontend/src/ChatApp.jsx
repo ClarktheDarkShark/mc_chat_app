@@ -179,53 +179,56 @@ function ChatApp() {
       setError("Please enter a message first.");
       return;
     }
-
-    // Create user message
+  
     const userMessage = {
       role: "user",
       content: message.trim(),
-      id: Date.now(),      // unique key
+      id: Date.now(),
     };
-
-    // Placeholder for assistant
+  
+    // Detect intent based on keywords in user message
+    let loadingText = "Assistant is typing...";  // Default loading text
+    if (message.toLowerCase().includes("search") || message.toLowerCase().includes("look up")) {
+      loadingText = "Searching the internet...";
+    } else if (message.toLowerCase().includes("generate image") || message.toLowerCase().includes("create image")) {
+      loadingText = "Creating the image...";
+    }
+  
+    // Placeholder for assistant response
     const assistantPlaceholder = {
       role: "assistant",
-      content: "Assistant is typing...",
+      content: loadingText,
       loading: true,
-      id: Date.now() + 1, // unique key
+      id: Date.now() + 1,
     };
-
-    // Update conversation optimistically
+  
     setConversation((prev) => [...prev, userMessage, assistantPlaceholder]);
     setMessage("");
     setLoading(true);
-
-    // Prepare payload
+  
     const payload = {
       message: userMessage.content,
       model,
       system_prompt: systemPrompt.trim(),
       temperature,
     };
-
+  
     try {
-      const res = await fetch("/api/chat", {  // Ensure this endpoint is correct
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        credentials: "include"
+        credentials: "include",
       });
-
-      // Check if response is OK
+  
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to fetch.");
       }
-
+  
       const data = await res.json();
-
+  
       if (data.error) {
-        // Replace placeholder with error
         setError(data.error);
         setConversation((prev) => {
           const updated = [...prev];
@@ -239,7 +242,6 @@ function ChatApp() {
           return updated;
         });
       } else {
-        // Replace placeholder with final assistant message
         setConversation((prev) => {
           const updated = [...prev];
           updated.pop();
@@ -251,7 +253,6 @@ function ChatApp() {
           });
           return updated;
         });
-        // Refresh conversations list
         fetchConversations();
       }
     } catch (err) {
@@ -272,6 +273,7 @@ function ChatApp() {
       setLoading(false);
     }
   };
+  
 
   // 5) Handle Enter key in multiline TextField
   const handleKeyPress = (e) => {
@@ -289,7 +291,7 @@ function ChatApp() {
           minHeight: '100vh',
           p: { xs: 1, sm: 2 },
           display: 'flex',
-          flexDirection: 'column-reverse',
+          flexDirection: 'column',
           justifyContent: 'flex-start',
           border: 'none',
         }}
