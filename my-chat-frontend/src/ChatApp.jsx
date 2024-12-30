@@ -1,5 +1,5 @@
 // src/ChatApp.jsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, memo } from "react";
 import { 
   createTheme, 
   ThemeProvider, 
@@ -31,6 +31,9 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 // Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
+
+// Import react-window for virtualization
+import { FixedSizeList as ListWindow } from 'react-window';
 
 // Minimal Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component {
@@ -72,6 +75,80 @@ const theme = createTheme({
       secondary: '#FFD700',
     },
   },
+});
+
+// Memoized Message Component to prevent unnecessary re-renders
+const ChatMessage = memo(({ msg }) => {
+  console.log(`Rendering message ${msg.id}:`, msg.content);
+
+  const isImage =
+    msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
+  const isAssistant = msg.role === "assistant";
+
+  let contentToRender;
+
+  if (msg.loading) {
+    contentToRender = (
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <CircularProgress size={20} color="secondary" />
+        <Typography variant="body2" sx={{ ml: 1 }}>
+          {msg.content} {/* Display dynamic loading text */}
+        </Typography>
+      </Box>
+    );
+  } else if (isImage) {
+    // Use regex to safely parse the image URL
+    const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
+    const imageUrl = match ? match[1] : null;
+
+    if (imageUrl) {
+      contentToRender = (
+        <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
+          <img
+            src={imageUrl}
+            alt="Generated"
+            style={{ width: '100%', height: 'auto', display: 'block' }}
+          />
+        </Box>
+      );
+    } else {
+      contentToRender = (
+        <Typography variant="body1" color="error">
+          Invalid image URL.
+        </Typography>
+      );
+    }
+  } else if (isAssistant) {
+    contentToRender = (
+      <ReactMarkdown>
+        {msg.content || "**(No content available)**"}
+      </ReactMarkdown>
+    );
+  } else {
+    contentToRender = (
+      <Typography variant="body1">
+        {msg.content || "No response available."}
+      </Typography>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        backgroundColor: isImage
+          ? 'transparent'
+          : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
+        color: 'white',
+        borderRadius: 2,
+        p: isImage ? 0 : 1,
+        maxWidth: '80%',
+        ml: msg.role === "user" ? 'auto' : 0,
+        mb: 1,
+      }}
+    >
+      {contentToRender}
+    </Box>
+  );
 });
 
 function ChatApp() {
@@ -332,6 +409,16 @@ Feel free to type your question below!`,
     }
   };
 
+  // Row renderer for react-window
+  const Row = ({ index, style }) => {
+    const msg = conversation[index];
+    return (
+      <div style={style}>
+        <ChatMessage msg={msg} />
+      </div>
+    );
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Box
@@ -343,6 +430,8 @@ Feel free to type your question below!`,
           flexDirection: 'column',
           justifyContent: 'flex-start',
           border: 'none',
+          margin: 0,
+          padding: 0,
         }}
       >
         {/* Container Setup */}
@@ -490,80 +579,15 @@ Feel free to type your question below!`,
                   pr: { xs: 0, sm: 1 },
                 }}
               >
-                {/* Render each message as a simple Box */}
-                {conversation.map((msg) => {
-                  console.log(`Rendering message ${msg.id}:`, msg.content);
-
-                  const isImage =
-                    msg.role === "assistant" && msg.content.startsWith("![Generated Image](");
-                  const isAssistant = msg.role === "assistant";
-
-                  let contentToRender;
-
-                  if (msg.loading) {
-                    contentToRender = (
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <CircularProgress size={20} color="secondary" />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          {msg.content} {/* Display dynamic loading text */}
-                        </Typography>
-                      </Box>
-                    );
-                  } else if (isImage) {
-                    // Use regex to safely parse the image URL
-                    const match = msg.content.match(/^!\[Generated Image\]\((.+)\)$/);
-                    const imageUrl = match ? match[1] : null;
-
-                    if (imageUrl) {
-                      contentToRender = (
-                        <Box sx={{ maxWidth: '70%', borderRadius: '8px', overflow: 'hidden' }}>
-                          <img
-                            src={imageUrl}
-                            alt="Generated"
-                            style={{ width: '100%', height: 'auto', display: 'block' }}
-                          />
-                        </Box>
-                      );
-                    } else {
-                      contentToRender = (
-                        <Typography variant="body1" color="error">
-                          Invalid image URL.
-                        </Typography>
-                      );
-                    }
-                  } else if (isAssistant) {
-                    contentToRender = (
-                      <ReactMarkdown>
-                        {msg.content || "**(No content available)**"}
-                      </ReactMarkdown>
-                    );
-                  } else {
-                    contentToRender = (
-                      <Typography variant="body1">
-                        {msg.content || "No response available."}
-                      </Typography>
-                    );
-                  }
-
-                  return (
-                    <Box
-                      key={msg.id}
-                      sx={{
-                        backgroundColor: isImage
-                          ? 'transparent'
-                          : (msg.role === "user" ? 'primary.main' : (msg.loading ? 'grey.500' : 'grey.700')),
-                        color: 'white',
-                        borderRadius: 2,
-                        p: isImage ? 0 : 1,
-                        maxWidth: '80%',
-                        ml: msg.role === "user" ? 'auto' : 0,
-                        mb: 1,
-                      }}
-                    >
-                      {contentToRender}
-                    </Box>
-                  );
-                })}
+                {/* Virtualized Chat Messages */}
+                <ListWindow
+                  height={isMobile ? 300 : 500} // Adjust based on screen size
+                  itemCount={conversation.length}
+                  itemSize={100} // Approximate height of each message; adjust as needed
+                  width="100%"
+                >
+                  {Row}
+                </ListWindow>
               </Box>
             </ErrorBoundary>
 
