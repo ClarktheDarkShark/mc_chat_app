@@ -91,6 +91,26 @@ class WebSearchCog:
                 response = requests.get(self.search_url, params=params, timeout=10)
                 if response.status_code == 200:
                     search_results = response.json()
+                    items = search_results.get('items', [])
+                    if not items:
+                        query += f'This is what you provided last time and resulted in no search results. Try again, but be more general to allow a broader search:\n{optimized_query}'
+                        optimized_query = self.generate_search_terms(query, history)
+                                print(f"Second Optimized Query: {optimized_query}")
+                        params = {
+                            "key": self.search_api_key,
+                            "cx": self.search_engine_id,
+                            "q": optimized_query,
+                        }
+                        try:
+                            response = requests.get(self.search_url, params=params, timeout=10)
+                            if not response.status_code == 200:
+                                error_content = response.text
+                                print(f"Error fetching search results: {response.status_code}")
+                                print(f"Error details: {error_content}")
+                                return "An error occurred while performing the web search."
+                        except Exception as e:
+                            print(f"Exception during web search: {e}")
+                            return "An error occurred while performing the web search."
                     print()
                     print('search_results', search_results)
                     return self.fetch_search_content(search_results)
