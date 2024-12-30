@@ -87,10 +87,19 @@ class ChatBlueprint:
                     file_path = os.path.join(self.upload_folder, unique_filename)
                     file.save(file_path)
 
+                    # Reset the file pointer
+                    file.seek(0)
+
+                    # Read the file content
+                    try:
+                        file_content = file.read().decode('utf-8', errors='ignore')  # Decode for text files
+                    except Exception as e:
+                        file_content = "Could not read file content."
+                        print("Error reading file:", e)
+
                     # **GENERATE FILE URL**
                     file_url = f"/uploads/{unique_filename}"
                     file_type = file.content_type
-                    file_content = file.read().decode('utf-8')  # Decode for text files
                     
                     
                 else:
