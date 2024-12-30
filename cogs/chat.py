@@ -279,6 +279,9 @@ class ChatBlueprint:
                 # Regular Chat Response
                 print('***************************************************************************************************************')
                 print()
+                print('temp_conversation', temp_conversation)
+                print('***************************************************************************************************************')
+                print()
                 start_time = time.time()
                 assistant_reply = self.generate_chat_response(temp_conversation, model, temperature)
                 end_time = time.time()
