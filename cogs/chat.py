@@ -172,6 +172,8 @@ class ChatBlueprint:
 
             conversation_history.append(user_message_entry)
 
+            print('conversation_history', conversation_history)
+
             # Save the user message
             self.save_messages(conversation_id, "user", user_message)
 
@@ -258,15 +260,15 @@ class ChatBlueprint:
                         f"Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***"
                     )
                 else:
+                    print('in else: conversation_history', conversation_history)
                     temp_conversation = copy.deepcopy(conversation_history)
-                    temp_conversation[-1]['content'] = (
-                        f'\n{file_content}\n')
+                    temp_conversation[-1]['content'] += (f'\n{file_content}\n')
 
-                def trim_conversation(conversation, max_tokens=50000):
+                def trim_conversation(temp_conversation, max_tokens=50000):
                     encoding = tiktoken.encoding_for_model(model)
                     total_tokens = 0
                     trimmed = []
-                    for message in reversed(conversation):
+                    for message in reversed(temp_conversation):
                         tokens = len(encoding.encode(message['content']))
                         total_tokens += tokens
                         if total_tokens > max_tokens:
