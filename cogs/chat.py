@@ -4,18 +4,32 @@ import json
 from flask import Blueprint, request, jsonify, session
 import openai
 import copy
-# Remove incorrect import
-# from openai import OpenAI
-
 from .web_search import WebSearchCog
 from .code_files import CodeFilesCog
+from app import db  # Import db from app.py
+from datetime import datetime
+import uuid
+
+# Define Database Models
+class Conversation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    messages = db.relationship('Message', backref='conversation', lazy=True)
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
+    role = db.Column(db.String(50), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatBlueprint:
     def __init__(self, app_instance):
         self.bp = Blueprint("chat_blueprint", __name__)
         
         # Initialize OpenAI client properly
-        # The standard OpenAI library does not have an OpenAI class; instead, set the API key
         openai.api_key = os.getenv('OPENAI_KEY')
         self.client = openai  # Assign the openai module as the client
 
@@ -36,25 +50,51 @@ class ChatBlueprint:
             temperature = data.get("temperature", 0.7)
             system_prompt = data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
             additional_instructions = '''You are an AI assistant that generates structured and easy-to-read responses.  
-Provide responses using corrct markdown format. It is critical that markdown format is used with nothing additional.  
+Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  
 Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  
 Ensure sufficient line breaks between sections to improve readability.'''
 
             if not user_message:
                 return jsonify({"error": "No message provided"}), 400
 
-            # Initialize conversation history in session
-            if 'conversation_history' not in session:
-                session['conversation_history'] = [{"role": "system", "content": system_prompt + '\n' + additional_instructions}]
-            conversation = session['conversation_history']
+            # Ensure session has a unique session_id
+            if 'session_id' not in session:
+                session['session_id'] = str(uuid.uuid4())
+            session_id = session['session_id']
+            
+            # Check if there's a current conversation
+            if 'current_conversation_id' not in session:
+                # Create a new conversation
+                title = "New Conversation"
+                new_convo = Conversation(
+                    session_id=session_id,
+                    title=title
+                )
+                db.session.add(new_convo)
+                db.session.commit()
+                session['current_conversation_id'] = new_convo.id
 
-            # Append user message to conversation history
-            conversation.append({"role": "user", "content": user_message})
-            temp_conversation = copy.deepcopy(conversation)
-            # session['conversation_history'] = conversation
+            conversation_id = session.get('current_conversation_id')
+            conversation = Conversation.query.get(conversation_id)
+
+            if not conversation or conversation.session_id != session_id:
+                return jsonify({"error": "Conversation not found or unauthorized"}), 404
+
+            # Get messages for the conversation
+            messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
+            conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
+
+            # Add system prompt if first message
+            if not conversation_history:
+                conversation_history.append({"role": "system", "content": system_prompt + '\n' + additional_instructions})
+
+            # Append user message
+            conversation_history.append({"role": "user", "content": user_message})
+
+            temp_conversation = copy.deepcopy(conversation_history)
 
             # Analyze user intent
-            intent = self.analyze_user_intent(user_message, conversation)
+            intent = self.analyze_user_intent(user_message, conversation_history)
 
             print()
             print('intent', intent)
@@ -69,14 +109,19 @@ Ensure sufficient line breaks between sections to improve readability.'''
                     if prompt:
                         image_url = self.generate_image(prompt)
                         assistant_reply = f"![Generated Image]({image_url})"
-                        conversation.append({"role": "assistant", "content": assistant_reply})
-                        session['conversation_history'] = conversation
+                        conversation_history.append({"role": "assistant", "content": assistant_reply})
+                        # Save messages
+                        self.save_messages(conversation_id, "user", user_message)
+                        self.save_messages(conversation_id, "assistant", assistant_reply)
                     else:
                         assistant_reply = "No image prompt provided."
+                        conversation_history.append({"role": "assistant", "content": assistant_reply})
+                        self.save_messages(conversation_id, "user", user_message)
+                        self.save_messages(conversation_id, "assistant", assistant_reply)
                     return jsonify({
                         "user_message": user_message,
                         "assistant_reply": assistant_reply,
-                        "conversation_history": conversation
+                        "conversation_history": conversation_history
                     })
 
                 elif intent.get("code_intent", False):
@@ -89,27 +134,27 @@ Ensure sufficient line breaks between sections to improve readability.'''
                         intent['code_intent'] = True  # Ensure intent shows True
                     else:
                         assistant_reply = "No code files found to provide."
-                        conversation.append({"role": "assistant", "content": assistant_reply})
-                        session['conversation_history'] = conversation
+                        conversation_history.append({"role": "assistant", "content": assistant_reply})
+                        self.save_messages(conversation_id, "user", user_message)
+                        self.save_messages(conversation_id, "assistant", assistant_reply)
                         return jsonify({
                             "user_message": user_message,
                             "assistant_reply": assistant_reply,
-                            "conversation_history": conversation
+                            "conversation_history": conversation_history
                         })
 
                 elif intent.get("internet_search", False):
                     # Handle internet search (Placeholder)
                     # Perform web search
                     query = user_message  # Or extract a specific part of the message
-                    search_content = self.web_search_cog.web_search(user_message, conversation)
+                    search_content = self.web_search_cog.web_search(user_message, conversation_history)
                     print('search_content', search_content)
-                    sys_search_content = f'\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this. Only use the most relevent and accurate information that matches the User Query.'
-                    # search_content = f'\n\nThe following is information from the internet to help with your answer: {search_content}\n\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this.'
+                    sys_search_content = f'\nDo not say "I am unable to browse the internet," because you have information directly retrieved from the internet. Give a confident answer based on this. Only use the most relevant and accurate information that matches the User Query.'
 
                     temp_conversation[0]['content'] += sys_search_content
-                    temp_conversation[-1]['content'] = f'\n\nYou are being supplimented with the following information from the internent to answer user query. Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***'
+                    temp_conversation[-1]['content'] = f'\n\nYou are being supplemented with the following information from the internet to answer user query. Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***'
                 else:
-                    temp_conversation = conversation
+                    temp_conversation = conversation_history
 
                 # Regular Chat Response
                 print()
@@ -123,17 +168,68 @@ Ensure sufficient line breaks between sections to improve readability.'''
                 print('Final Response:', assistant_reply)
                 print()
                 print()
-                conversation.append({"role": "assistant", "content": assistant_reply})
-                session['conversation_history'] = conversation
+                conversation_history.append({"role": "assistant", "content": assistant_reply})
+                # Save messages
+                self.save_messages(conversation_id, "user", user_message)
+                self.save_messages(conversation_id, "assistant", assistant_reply)
 
                 return jsonify({
                     "user_message": user_message,
                     "assistant_reply": assistant_reply,
-                    "conversation_history": conversation
+                    "conversation_history": conversation_history
                 })
 
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
+
+        @self.bp.route("/conversations", methods=["GET"])
+        def get_conversations():
+            # Fetch recent conversations for the current session
+            session_id = session.get('session_id', 'unknown_session')
+            conversations = Conversation.query.filter_by(session_id=session_id).order_by(Conversation.timestamp.desc()).limit(10).all()
+            convo_list = [{
+                "id": convo.id,
+                "title": convo.title,
+                "timestamp": convo.timestamp.isoformat()
+            } for convo in conversations]
+            return jsonify({"conversations": convo_list})
+
+        @self.bp.route("/conversations/<int:conversation_id>", methods=["GET"])
+        def get_conversation(conversation_id):
+            # Fetch a specific conversation's messages
+            conversation = Conversation.query.get(conversation_id)
+            if not conversation:
+                return jsonify({"error": "Conversation not found"}), 404
+            session_id = session.get('session_id', 'unknown_session')
+            if conversation.session_id != session_id:
+                return jsonify({"error": "Unauthorized access"}), 403
+            messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
+            conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
+            return jsonify({"conversation_history": conversation_history})
+
+        @self.bp.route("/conversations/new", methods=["POST"])
+        def new_conversation():
+            session_id = session.get('session_id', 'unknown_session')
+            data = request.get_json()
+            title = data.get('title', 'New Conversation')
+            new_convo = Conversation(
+                session_id=session_id,
+                title=title
+            )
+            db.session.add(new_convo)
+            db.session.commit()
+            session['current_conversation_id'] = new_convo.id
+            return jsonify({"conversation_id": new_convo.id, "title": new_convo.title, "timestamp": new_convo.timestamp.isoformat()})
+
+    def save_messages(self, conversation_id, role, content):
+        """Save a message to the database."""
+        msg = Message(
+            conversation_id=conversation_id,
+            role=role,
+            content=content
+        )
+        db.session.add(msg)
+        db.session.commit()
 
     def analyze_user_intent(self, user_input, conversation_hist):
         """Analyze user intent using OpenAI and return a JSON object."""

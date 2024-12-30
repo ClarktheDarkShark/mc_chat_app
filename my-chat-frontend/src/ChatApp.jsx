@@ -16,12 +16,19 @@ import {
   CircularProgress,
   TextField,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Button
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import ClearIcon from '@mui/icons-material/Clear';
+import MenuIcon from '@mui/icons-material/Menu';
 
 // 1) Import react-markdown for assistant message rendering
 import ReactMarkdown from 'react-markdown';
@@ -70,13 +77,15 @@ const theme = createTheme({
 
 function ChatApp() {
   const [message, setMessage] = useState("");
-  const [model, setModel] = useState("gpt-4o");
+  const [model, setModel] = useState("gpt-4");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
   const [conversation, setConversation] = useState([]);
   const [error, setError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [conversationsList, setConversationsList] = useState([]);
 
   // Ref for auto-scroll
   const conversationRef = useRef(null);
@@ -90,7 +99,80 @@ function ChatApp() {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
 
-  // 3) Send message logic
+  // 1. Fetch chat history on component mount
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  const fetchConversations = async () => {
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setConversationsList(data.conversations);
+      } else {
+        console.error("Failed to fetch conversations.");
+      }
+    } catch (err) {
+      console.error("Error fetching conversations:", err);
+    }
+  };
+
+  // 2. Handle selecting a conversation
+  const selectConversation = async (convo) => {
+    try {
+      const res = await fetch(`/api/conversations/${convo.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setConversation(data.conversation_history);
+        setDrawerOpen(false);
+      } else {
+        console.error("Failed to fetch conversation.");
+      }
+    } catch (err) {
+      console.error("Error fetching conversation:", err);
+    }
+  };
+
+  // 3. Handle starting a new conversation
+  const startNewConversation = async () => {
+    try {
+      const res = await fetch("/api/conversations/new", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ title: "New Conversation" }),
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Set current conversation to new one
+        setConversation([]);
+        setError("");
+        // Optionally, fetch conversations list again
+        fetchConversations();
+      } else {
+        console.error("Failed to create new conversation.");
+      }
+    } catch (err) {
+      console.error("Error creating new conversation:", err);
+    }
+  };
+
+  // 4) Send message logic
   const sendMessage = async () => {
     setError("");
     if (!message.trim()) {
@@ -131,6 +213,7 @@ function ChatApp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        credentials: "include"
       });
 
       // Check if response is OK
@@ -168,6 +251,8 @@ function ChatApp() {
           });
           return updated;
         });
+        // Refresh conversations list
+        fetchConversations();
       }
     } catch (err) {
       console.error(err);
@@ -188,7 +273,7 @@ function ChatApp() {
     }
   };
 
-  // 4) Handle Enter key in multiline TextField
+  // 5) Handle Enter key in multiline TextField
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -209,7 +294,7 @@ function ChatApp() {
           border: 'none',
         }}
       >
-        {/* 5) Container Setup */}
+        {/* Container Setup */}
         <Container
           maxWidth="lg"
           sx={{
@@ -222,23 +307,71 @@ function ChatApp() {
             border: 'none',
             width: { xs: '100%', sm: '80%', md: '70%' },
             margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'row',
           }}
         >
-          <Paper
-            elevation={6}
+          {/* Drawer for Chat History */}
+          <Drawer
+            variant="persistent"
+            anchor="left"
+            open={drawerOpen}
             sx={{
-              p: { xs: 1, sm: 2 },
-              borderRadius: 3,
-              backgroundColor: 'background.paper',
+              '& .MuiDrawer-paper': {
+                width: 240,
+                backgroundColor: '#1a1a1a',
+                color: '#ffffff',
+              },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, justifyContent: 'space-between' }}>
+              <Typography variant="h6">Chat History</Typography>
+              <IconButton onClick={() => setDrawerOpen(false)} color="primary">
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <Divider />
+            <List>
+              {conversationsList.map((convo) => (
+                <ListItem button key={convo.id} onClick={() => selectConversation(convo)}>
+                  <ListItemText
+                    primary={convo.title}
+                    secondary={new Date(convo.timestamp).toLocaleString()}
+                  />
+                </ListItem>
+              ))}
+            </List>
+            <Divider />
+            <Box sx={{ p: 2 }}>
+              <Button variant="contained" color="secondary" fullWidth onClick={startNewConversation}>
+                New Conversation
+              </Button>
+            </Box>
+          </Drawer>
+
+          {/* Main Chat Area */}
+          <Box
+            sx={{
+              flexGrow: 1,
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
+              borderRadius: 3,
+              backgroundColor: 'background.paper',
               boxShadow: 'none',
               border: 'none',
+              p: 2,
+              ml: drawerOpen ? '240px' : 0,
+              transition: 'margin 0.3s',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <IconButton onClick={() => setDrawerOpen(true)} color="primary">
+                <MenuIcon />
+              </IconButton>
               <Typography variant={isMobile ? "h6" : "h5"} color="primary">
                 USMC AI Agent Demo
               </Typography>
@@ -274,8 +407,8 @@ function ChatApp() {
                       onChange={(e) => setModel(e.target.value)}
                       sx={{ color: '#ffffff', backgroundColor: '#333333', borderRadius: '4px' }}
                     >
-                      <MenuItem value="gpt-4o">gpt-4o</MenuItem>
-                      <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+                      <MenuItem value="gpt-4">gpt-4</MenuItem>
+                      <MenuItem value="gpt-4-mini">gpt-4-mini</MenuItem>
                       <MenuItem value="o1-mini">o1-mini</MenuItem>
                       <MenuItem value="o1-preview">o1-preview</MenuItem>
                       <MenuItem value="dalle-3">DALL-E 3</MenuItem>
@@ -436,7 +569,7 @@ function ChatApp() {
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
               *This application can produce incorrect responses.
             </Typography>
-          </Paper>
+          </Box>
         </Container>
       </Box>
     </ThemeProvider>

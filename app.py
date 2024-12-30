@@ -4,6 +4,10 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_session import Session
 from cogs.chat import ChatBlueprint
+from flask_sqlalchemy import SQLAlchemy
+
+# Initialize SQLAlchemy outside the FlaskApp class
+db = SQLAlchemy()
 
 class FlaskApp:
     def __init__(self):
@@ -11,8 +15,17 @@ class FlaskApp:
         self.app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-default-secret-key')
         self.app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
         self.app.config['SESSION_PERMANENT'] = False
+
+        # Database configuration
+        # Use DATABASE_URL from environment or default to SQLite
+        self.app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///chat_history.db')
+        self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
         CORS(self.app, supports_credentials=True)
         Session(self.app)  # Initialize server-side sessions
+
+        # Initialize the database
+        db.init_app(self.app)
 
         # Register blueprint
         chat_blueprint = ChatBlueprint(self)
@@ -20,6 +33,10 @@ class FlaskApp:
 
         # Add routes
         self.add_routes()
+
+        # Create database tables
+        with self.app.app_context():
+            db.create_all()
 
     def add_routes(self):
         @self.app.route("/")
