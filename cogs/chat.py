@@ -180,8 +180,8 @@ class ChatBlueprint:
                     file_url = None
                     file_type = None
                     file_content = ''
-                print()
-                print('file_content', file_content)
+                # print()
+                # print('file_content', file_content)
             else:
                 # **HANDLE JSON REQUEST**
                 data = request.get_json()
@@ -437,6 +437,10 @@ class ChatBlueprint:
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
 
+        @self.bp.route("/uploads/<path:filename>", methods=["GET"])
+        def uploaded_file(filename):
+            return send_from_directory(self.upload_folder, filename)
+            
         @self.bp.route("/conversations", methods=["GET"])
         def get_conversations():
             # Fetch recent conversations for the current session
