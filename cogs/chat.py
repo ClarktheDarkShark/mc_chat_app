@@ -344,7 +344,7 @@ class ChatBlueprint:
                 else:
                     print('in else: conversation_history', conversation_history)
                     temp_conversation = copy.deepcopy(conversation_history)
-                    temp_conversation[-1]['content'] += (f'\n{file_content}\n')
+                    temp_conversation[-1]['content'] = (f'\n{file_content}\n') + temp_conversation[-1]['content']
 
 
 
