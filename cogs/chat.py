@@ -110,8 +110,8 @@ class ChatBlueprint:
                     # **SECURELY SAVE THE FILE**
                     filename = secure_filename(file.filename)
                     # filename = file.filename
-                    # unique_filename = f"{uuid.uuid4()}_{filename}"
-                    unique_filename = filename
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    # unique_filename = filename
                     file_path = os.path.join(self.upload_folder, unique_filename)
                     file.save(file_path)
 
@@ -321,37 +321,35 @@ class ChatBlueprint:
                         if uploaded_file:
                             file_path = os.path.join(self.upload_folder, uploaded_file.filename)
                             
-                            # Check if file exists before reading
+                            # Check if the file exists
                             if os.path.exists(file_path):
                                 try:
-                                    # Read the file content
                                     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                         file_content = f.read()
-
-                                    # Limit content size to avoid overwhelming the model
+                                    
+                                    # Truncate content if necessary
                                     max_tokens = 50000
                                     words = file_content.split()
                                     if len(words) > max_tokens:
                                         file_content = ' '.join(words[:max_tokens]) + "\n\n[Content truncated...]"
-
-                                    # Pass file content to assistant for processing
+                                    
                                     assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
                                 
                                 except Exception as e:
                                     print(f"Error reading file: {e}")
                                     assistant_reply = f"Could not read the file '{uploaded_file.filename}'."
                             else:
-                                # File does not exist; handle gracefully
                                 print(f"File not found: {file_path}")
                                 assistant_reply = f"File '{uploaded_file.filename}' not found. It may have been deleted or the session expired."
-
-                                # Optional: Clean up stale DB entry if the file is missing
+                                
+                                # Optional: Remove stale DB entry
                                 db.session.delete(uploaded_file)
                                 db.session.commit()
-                                print(f"Stale database entry for file '{uploaded_file.filename}' has been removed.")
+                                print(f"Removed stale entry for '{uploaded_file.filename}' from the database.")
                         
                         else:
                             assistant_reply = f"File with ID {file_id} not found in the database."
+
 
 
                     # Add the assistant reply to the conversation history
