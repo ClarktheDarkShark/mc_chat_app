@@ -17,25 +17,26 @@ depends_on = None
 
 
 def upgrade():
+    # Step 1: Add the original_filename column as nullable
     with op.batch_alter_table('uploaded_file', schema=None) as batch_op:
-        # Step 1: Add the new columns as nullable
         batch_op.add_column(sa.Column('original_filename', sa.String(length=255), nullable=True))
-        batch_op.add_column(sa.Column('file_type', sa.String(length=100), nullable=True))
     
-    # Step 2: Populate the column for existing rows with default values
-    op.execute("UPDATE uploaded_file SET original_filename = filename WHERE original_filename IS NULL")
-    op.execute("UPDATE uploaded_file SET file_type = 'application/octet-stream' WHERE file_type IS NULL")
+    # Step 2: Populate the original_filename column for existing rows
+    # Assuming 'filename' column already exists and is NOT NULL
+    op.execute("""
+        UPDATE uploaded_file
+        SET original_filename = filename
+        WHERE original_filename IS NULL
+    """)
     
-    # Step 3: Make the columns NOT NULL
+    # Step 3: Alter the original_filename column to be NOT NULL
     with op.batch_alter_table('uploaded_file', schema=None) as batch_op:
-        batch_op.alter_column('original_filename', existing_type=sa.String(length=255), nullable=True)
-        batch_op.alter_column('file_type', existing_type=sa.String(length=100), nullable=True)
+        batch_op.alter_column('original_filename',
+                               existing_type=sa.String(length=255),
+                               nullable=False)
 
 
 def downgrade():
+    # Step 1: Drop the original_filename column
     with op.batch_alter_table('uploaded_file', schema=None) as batch_op:
         batch_op.drop_column('original_filename')
-        batch_op.drop_column('file_type')
-
-
-    # ### end Alembic commands ###
