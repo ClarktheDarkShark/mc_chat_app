@@ -71,6 +71,14 @@ class ChatBlueprint:
         @self.bp.route("/chat", methods=["POST"])
         def chat():
             # Ensure session has a unique session_id
+
+            if not os.path.exists(self.upload_folder):
+                os.makedirs(self.upload_folder)
+                print(f"Uploads directory created at: {self.upload_folder}")
+            else:
+                print(f"Uploads directory already exists: {self.upload_folder}")
+
+
             if 'session_id' not in session:
                 session['session_id'] = str(uuid.uuid4())
             session_id = session['session_id']
@@ -104,6 +112,8 @@ class ChatBlueprint:
                     unique_filename = f"{uuid.uuid4()}_{filename}"
                     file_path = os.path.join(self.upload_folder, unique_filename)
                     file.save(file_path)
+
+                    print(f"File saved at: {file_path}")
 
                     # **INSERT INTO DATABASE**
                     uploaded_file = UploadedFile(
