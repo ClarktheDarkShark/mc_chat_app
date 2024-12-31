@@ -72,7 +72,14 @@ def create_app():
 
     return app
 
+# Create the app instance globally for Gunicorn
+app_instance = FlaskApp()
+app = app_instance.app  # Expose the app instance for Gunicorn
+
 if __name__ == "__main__":
-    app = create_app()
-    port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app_instance.run()
+
+# if __name__ == "__main__":
+#     app = create_app()
+#     port = int(os.getenv("PORT", 5000))
+#     app.run(host="0.0.0.0", port=port, debug=True)
