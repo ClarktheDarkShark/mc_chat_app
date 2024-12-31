@@ -110,9 +110,8 @@ class ChatBlueprint:
 
                 if file:
                     # **SECURELY SAVE THE FILE**
-                    filename = secure_filename(file.filename)
-                    # filename = file.filename
-                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    original_filename = secure_filename(file.filename)  # Secure the original filename
+                    unique_filename = f"{uuid.uuid4()}_{original_filename}"
                     # unique_filename = filename
                     file_path = os.path.join(self.upload_folder, unique_filename)
                     file.save(file_path)
@@ -123,7 +122,9 @@ class ChatBlueprint:
                     uploaded_file = UploadedFile(
                         session_id=session_id,
                         filename=unique_filename,
-                        file_url=f"/uploads/{unique_filename}"  # Assuming you serve files from this path
+                        original_filename=original_filename,  # Set the original filename
+                        file_url=f"/uploads/{unique_filename}",  # Assuming you serve files from this path
+                        file_type=file.content_type  # Set the file type
                     )
                     db.session.add(uploaded_file)
                     db.session.commit()
