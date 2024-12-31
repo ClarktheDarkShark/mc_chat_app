@@ -15,6 +15,7 @@ import tiktoken
 import time
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename
+import graphviz  # Added for visualization
 
 WORD_LIMIT = 50000
 
@@ -62,6 +63,9 @@ class ChatBlueprint:
 
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
+            print(f"Uploads directory created at: {self.upload_folder}")
+        else:
+            print(f"Uploads directory already exists: {self.upload_folder}")
 
         self.add_routes()
 
@@ -123,8 +127,8 @@ class ChatBlueprint:
                 uploaded_file = None
 
                 additional_instructions = (
-                    "You are an AI assistant that generates structured and easy-to-read responses.  \n"
-                    "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
+                    "Generate responses as structured and easy-to-read.  \n"
+                    "Provide responses using correct markdown formating. It is critical that markdown format is used with nothing additional.  \n"
                     "Use headings (e.g., ## Section Title), numbered lists, and bullet points to format output.  \n"
                     "Ensure sufficient line breaks between sections to improve readability. Generally, limit responses to no more than 1500 tokens."
                 )
@@ -291,6 +295,14 @@ class ChatBlueprint:
                     else:
                         assistant_reply = "No image prompt provided."
                     
+                elif intent.get("code_structure_intent", False):  # New condition
+                    # Generate Codebase Structure Diagram
+                    image_url = self.generate_codebase_structure_diagram()
+                    if image_url:
+                        assistant_reply = f"![Codebase Structure]({image_url})"
+                    else:
+                        assistant_reply = "Failed to generate codebase structure diagram."
+
                 elif intent.get("file_intent", False):
                     file_id = intent.get("file_id")
                     if not file_id:
@@ -391,7 +403,7 @@ class ChatBlueprint:
                 
                 # Prepare messages for OpenAI API
                 messages = [
-                    {"role": "system", "content": system_prompt + '\n' + additional_instructions}
+                    {"role": "system", "content": f"Your role is:\n{system_prompt} \n\nStructured response Guidelines:\n{additional_instructions}"}
                 ] + conversation_history
 
                 if supplemental_information:
@@ -620,6 +632,57 @@ class ChatBlueprint:
         except Exception as e:
             print(f'Error in image generation: {e}')
             return "Error generating image."
+
+    def generate_codebase_structure_diagram(self):
+        """Generate a visual representation of the codebase structure."""
+        try:
+            # Define the root directory to scan
+            current_file_dir = os.path.dirname(os.path.abspath(__file__))  # Directory where chat.py is located
+            root_dir = os.path.abspath(os.path.join(current_file_dir, '..'))  # Adjust as needed to point to the project root
+
+            print(f"Scanning root directory: {root_dir}")
+
+            dot = graphviz.Digraph(comment='Codebase Structure', format='png')
+
+            def add_nodes_edges(current_path, parent=None):
+                directory = os.path.basename(current_path)
+                node_id = current_path.replace(os.sep, '_')  # Unique node ID
+
+                if parent:
+                    dot.node(node_id, directory, shape='folder')
+                    dot.edge(parent, node_id)
+                else:
+                    dot.node(node_id, directory, shape='folder')  # Root node
+
+                try:
+                    for entry in os.listdir(current_path):
+                        path = os.path.join(current_path, entry)
+                        if os.path.isdir(path):
+                            add_nodes_edges(path, node_id)
+                        else:
+                            file_node_id = path.replace(os.sep, '_')
+                            dot.node(file_node_id, entry, shape='note')
+                            dot.edge(node_id, file_node_id)
+                except PermissionError:
+                    print(f"Permission denied: {current_path}")
+                except Exception as e:
+                    print(f"Error scanning directory {current_path}: {e}")
+
+            add_nodes_edges(root_dir)
+
+            # Generate the diagram
+            output_filename = f"codebase_structure_{uuid.uuid4()}"
+            dot.render(filename=output_filename, directory=self.upload_folder, cleanup=True)
+            image_path = os.path.join(self.upload_folder, f"{output_filename}.png")
+            image_url = f"/uploads/{output_filename}.png"
+
+            print(f"Codebase structure diagram generated at: {image_path}")
+
+            return image_url
+
+        except Exception as e:
+            print(f"Error generating codebase structure diagram: {e}")
+            return None
 
     def generate_chat_response(self, messages, model, temperature):
         """Generate a chat response using OpenAI's ChatCompletion."""
