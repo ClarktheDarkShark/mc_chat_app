@@ -108,9 +108,10 @@ class ChatBlueprint:
 
                 if file:
                     # **SECURELY SAVE THE FILE**
-                    # filename = secure_filename(file.filename)
-                    filename = file.filename
-                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    filename = secure_filename(file.filename)
+                    # filename = file.filename
+                    # unique_filename = f"{uuid.uuid4()}_{filename}"
+                    unique_filename = filename
                     file_path = os.path.join(self.upload_folder, unique_filename)
                     file.save(file_path)
 
