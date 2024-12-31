@@ -344,7 +344,7 @@ class ChatBlueprint:
                 else:
                     print('in else: conversation_history', conversation_history)
                     temp_conversation = copy.deepcopy(conversation_history)
-                    temp_conversation[-1]['content'] = (f'\n{file_content}\n') + temp_conversation[-1]['content']
+                    # temp_conversation[-1]['content'] = (f'\n{file_content}\n') + temp_conversation[-1]['content']
 
 
 
@@ -504,7 +504,7 @@ class ChatBlueprint:
             )
 
             print("Full Response:", response)
-            
+
             intent_json = response.choices[0].message.content.strip()
             # Ensure the response is valid JSON
             intent = json.loads(intent_json)
