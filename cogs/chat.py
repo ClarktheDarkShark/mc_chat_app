@@ -107,7 +107,7 @@ class ChatBlueprint:
                     "system_prompt",
                     "You are a USMC AI agent. Provide relevant responses."
                 )
-
+                
 
 
                 file = request.files.get("file", None)
@@ -204,10 +204,10 @@ class ChatBlueprint:
             else:
                 # **HANDLE JSON REQUEST**
                 data = request.get_json()
-                user_message = request.form.get("message", "")
-                model = request.form.get("model", "gpt-4o")
-                temperature = float(request.form.get("temperature", 0.7))
-                system_prompt = request.form.get(
+                user_message = data.get("message", "")
+                model = data.get("model", "gpt-4o")
+                temperature = float(data.get("temperature", 0.7))
+                system_prompt = data.get(
                     "system_prompt",
                     "You are a USMC AI agent. Provide relevant responses."
                 )
