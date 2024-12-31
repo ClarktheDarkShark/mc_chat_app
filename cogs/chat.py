@@ -68,6 +68,7 @@ class ChatBlueprint:
     def add_routes(self):
         @self.bp.route("/chat", methods=["POST"])
         def chat():
+            WORD_LIMIT = 50000
             try:
                 # Ensure session has a unique session_id
                 if 'session_id' not in session:
