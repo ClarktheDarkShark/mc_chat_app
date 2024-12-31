@@ -78,8 +78,14 @@ class ChatBlueprint:
                 # Retrieve system prompt from request or use default
                 system_prompt = request.form.get(
                     "system_prompt",
-                    "You are a USMC AI agent. Provide relevant responses."
+                    "You are boring..."
                 )
+                print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+                print()
+
+                print('system_prompt', system_prompt)
+                print()
+                print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
                 model = request.form.get("model", "gpt-4o")
                 temperature = float(request.form.get("temperature", 0.7))
