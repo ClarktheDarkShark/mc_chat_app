@@ -316,6 +316,7 @@ class ChatBlueprint:
                     })
                                 
                 elif intent.get("file_intent", False):
+                    temp_conversation = copy.deepcopy(conversation_history)
                     print('In file intent True')
                     file_id = intent.get("file_id")
 
