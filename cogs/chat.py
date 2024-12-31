@@ -311,7 +311,8 @@ class ChatBlueprint:
                         "intent": intent,
                         "fileUrl": file_url,         # **ADDED**
                         "fileName": filename if file_url else None,   # **ADDED**
-                        "fileType": file_type if file_url else None    # **ADDED**
+                        "fileType": file_type if file_url else None,    # **ADDED**
+                        "fileId": uploaded_file.id if uploaded_file else None
                     })
                                 
                 elif intent.get("file_intent", False):
@@ -381,7 +382,8 @@ class ChatBlueprint:
                             "intent": intent,
                             "fileUrl": file_url,         # **ADDED**
                             "fileName": filename if file_url else None,   # **ADDED**
-                            "fileType": file_type if file_url else None    # **ADDED**
+                            "fileType": file_type if file_url else None,    # **ADDED**
+                            "fileId": uploaded_file.id if uploaded_file else None
                         })
 
                 elif intent.get("internet_search", False):
