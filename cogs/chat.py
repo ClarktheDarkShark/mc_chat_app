@@ -316,13 +316,16 @@ class ChatBlueprint:
                     })
                                 
                 elif intent.get("file_intent", False):
+                    print('In file intent True')
                     file_id = intent.get("file_id")
 
                     if not file_id:
                         assistant_reply = "No file ID provided."
                     else:
                         # Retrieve the file from the database
+                        print('Uploading file...')
                         uploaded_file = UploadedFile.query.get(file_id)
+                        print('File upload complete...')
                         
                         if uploaded_file:
                             file_path = os.path.join(self.upload_folder, uploaded_file.filename)
@@ -330,6 +333,7 @@ class ChatBlueprint:
                             # Check if the file exists
                             if os.path.exists(file_path):
                                 try:
+                                    print('Reading file...')
                                     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                         file_content = f.read()
                                     
