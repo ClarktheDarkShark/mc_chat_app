@@ -73,6 +73,8 @@ class ChatBlueprint:
         @self.bp.route("/chat", methods=["POST"])
         def chat():
             # Ensure session has a unique session_id
+            # At the beginning of the chat route
+            uploaded_file = None
 
             if not os.path.exists(self.upload_folder):
                 os.makedirs(self.upload_folder)
