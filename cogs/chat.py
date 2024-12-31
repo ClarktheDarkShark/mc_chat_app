@@ -296,10 +296,40 @@ class ChatBlueprint:
                         "fileName": filename if file_url else None,   # **ADDED**
                         "fileType": file_type if file_url else None    # **ADDED**
                     })
-                
-                elif intent.get("file_intent, False"):
+                                
+                elif intent.get("file_intent", False):
+                    file_id = intent.get("file_id")
 
-                    pass
+                    if not file_id:
+                        assistant_reply = "No file ID provided."
+                    else:
+                        # Retrieve the file from the database
+                        uploaded_file = UploadedFile.query.get(file_id)
+                        if uploaded_file:
+                            file_path = os.path.join(self.upload_folder, uploaded_file.filename)
+                            try:
+                                # Read the file content
+                                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                    file_content = f.read()
+
+                                # Limit content size to avoid overwhelming the model
+                                max_tokens = 50000
+                                words = file_content.split()
+                                if len(words) > max_tokens:
+                                    file_content = ' '.join(words[:max_tokens]) + "\n\n[Content truncated...]"
+
+                                # Pass file content to assistant for processing
+                                assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
+
+                            except Exception as e:
+                                print("Error reading file:", e)
+                                assistant_reply = f"Could not read the file '{uploaded_file.filename}'."
+                        else:
+                            assistant_reply = f"File with ID {file_id} not found."
+
+                    # Add the assistant reply to the conversation history
+                    conversation_history.append({"role": "assistant", "content": assistant_reply})
+                    self.save_messages(conversation_id, "assistant", assistant_reply)
 
                 elif intent.get("code_intent", False):
                     # Handle code-related intents
@@ -349,7 +379,7 @@ class ChatBlueprint:
 
 
                 def trim_conversation(temp_conversation, max_tokens=50000):
-                    print('Before trim: temp_conversation', temp_conversation)
+                    # print('Before trim: temp_conversation', temp_conversation)
                     
                     encoding = tiktoken.encoding_for_model("gpt-4o")
                     total_tokens = 0
@@ -366,10 +396,11 @@ class ChatBlueprint:
                     if not trimmed and temp_conversation:
                         trimmed.append(temp_conversation[-1])
                     
-                    print('After trim: temp_conversation', trimmed)
+                    # print('After trim: temp_conversation', trimmed)
                     return trimmed
 
                 # Trim the conversation if it exceeds 8000 tokens
+                
                 temp_conversation = trim_conversation(temp_conversation, 50000)
 
                 # Regular Chat Response
