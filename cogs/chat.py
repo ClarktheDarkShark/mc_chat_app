@@ -76,6 +76,12 @@ class ChatBlueprint:
             # Ensure session has a unique session_id
             # At the beginning of the chat route
             uploaded_file = None
+            model = request.form.get("model", "gpt-4o")
+            temperature = float(request.form.get("temperature", 0.7))
+            system_prompt = request.form.get(
+                "system_prompt",
+                "You are a USMC AI agent. Provide relevant responses."
+            )
 
             if not os.path.exists(self.upload_folder):
                 os.makedirs(self.upload_folder)
@@ -101,12 +107,7 @@ class ChatBlueprint:
 
                 # Extract form data
                 user_message = request.form.get("message", "")
-                model = request.form.get("model", "gpt-4o")
-                temperature = float(request.form.get("temperature", 0.7))
-                system_prompt = request.form.get(
-                    "system_prompt",
-                    "You are a USMC AI agent. Provide relevant responses."
-                )
+
                 
 
 
@@ -205,12 +206,12 @@ class ChatBlueprint:
                 # **HANDLE JSON REQUEST**
                 data = request.get_json()
                 user_message = data.get("message", "")
-                model = data.get("model", "gpt-4o")
-                temperature = float(data.get("temperature", 0.7))
-                system_prompt = data.get(
-                    "system_prompt",
-                    "You are a USMC AI agent. Provide relevant responses."
-                )
+                # model = data.get("model", "gpt-4o")
+                # temperature = float(data.get("temperature", 0.7))
+                # system_prompt = data.get(
+                #     "system_prompt",
+                #     "You are a USMC AI agent. Provide relevant responses."
+                # )
                 file_url = None
                 file_type = None
 
