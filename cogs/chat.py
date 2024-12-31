@@ -70,6 +70,15 @@ class ChatBlueprint:
     def add_routes(self):
         @self.bp.route("/chat", methods=["POST"])
         def chat():
+
+            if not user_message and not file_url:
+                return jsonify({"error": "No message or file provided"}), 400
+
+            # Ensure session has a unique session_id
+            if 'session_id' not in session:
+                session['session_id'] = str(uuid.uuid4())
+            session_id = session['session_id']
+
             file_content = ''
             file = None
             additional_instructions = (
@@ -190,13 +199,6 @@ class ChatBlueprint:
                 file_url = None
                 file_type = None
 
-            if not user_message and not file_url:
-                return jsonify({"error": "No message or file provided"}), 400
-
-            # Ensure session has a unique session_id
-            if 'session_id' not in session:
-                session['session_id'] = str(uuid.uuid4())
-            session_id = session['session_id']
 
             # Check if there's a current conversation
             if 'current_conversation_id' not in session:
