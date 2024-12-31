@@ -71,6 +71,7 @@ class ChatBlueprint:
         @self.bp.route("/chat", methods=["POST"])
         def chat():
 
+            user_message = request.form.get("message", "")
             if not user_message and not file_url:
                 return jsonify({"error": "No message or file provided"}), 400
 
@@ -91,7 +92,6 @@ class ChatBlueprint:
                 # **HANDLE FILE UPLOAD**
 
                 # Extract form data
-                user_message = request.form.get("message", "")
                 model = request.form.get("model", "gpt-4o")
                 temperature = float(request.form.get("temperature", 0.7))
                 system_prompt = request.form.get(
