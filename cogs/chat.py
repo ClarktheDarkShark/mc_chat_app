@@ -394,6 +394,10 @@ class ChatBlueprint:
                                         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                             file_content = f.read()
 
+                                    temp_conversation[-1]['content'] = (
+                                        '\n\nYou are being supplemented with the following information from the file.\n '
+                                        f"User Query:\n***{file_content}***"
+                                    )
                                 except Exception as e:
                                     print("Error reading file:", e)
                                     file_content = "Error processing file."
