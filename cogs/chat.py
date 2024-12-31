@@ -493,7 +493,7 @@ class ChatBlueprint:
                 match = re.search(r"FILE:(\d+)", user_input)
                 if match:
                     intent["file_id"] = match.group(1)
-                    
+
             return intent
         except Exception as e:
             print()
@@ -505,7 +505,7 @@ class ChatBlueprint:
                 "image_prompt": "",
                 "internet_search": False,
                 "file_intent": False,
-                "file_id": ""
+                "file_id": "",
                 "active_users": False,
                 "code_intent": False,
                 "rand_num": []
