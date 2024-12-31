@@ -15,6 +15,8 @@ import tiktoken
 import time
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # **ADDED secure_filename**
+from app.models import UploadedFile
+
 
 # Define Database Models
 class Conversation(db.Model):
@@ -33,6 +35,13 @@ class Message(db.Model):
     # file_url = db.Column(db.String(500), nullable=True)      # **OPTIONAL**
     # file_name = db.Column(db.String(255), nullable=True)     # **OPTIONAL**
     # file_type = db.Column(db.String(100), nullable=True)     # **OPTIONAL**
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class UploadedFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    file_url = db.Column(db.String(500), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatBlueprint:
@@ -91,6 +100,15 @@ class ChatBlueprint:
                     unique_filename = f"{uuid.uuid4()}_{filename}"
                     file_path = os.path.join(self.upload_folder, unique_filename)
                     file.save(file_path)
+
+                    # **INSERT INTO DATABASE**
+                    uploaded_file = UploadedFile(
+                        session_id=session_id,
+                        filename=filename,
+                        file_url=f"/uploads/{unique_filename}"  # Assuming you serve files from this path
+                    )
+                    db.session.add(uploaded_file)
+                    db.session.commit()
 
                     # Reset the file pointer
                     file.seek(0)
