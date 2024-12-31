@@ -15,7 +15,6 @@ import tiktoken
 import time
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # **ADDED secure_filename**
-from app.models import UploadedFile
 
 
 # Define Database Models
