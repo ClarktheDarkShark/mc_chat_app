@@ -335,6 +335,7 @@ class ChatBlueprint:
                             # Check if the file exists
                             if os.path.exists(file_path):
                                 try:
+                                    WORD_LIMIT = 50000
                                     print('Reading file...')
 
                                     # Detect file type by extension or MIME type
