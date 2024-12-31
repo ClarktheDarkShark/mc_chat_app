@@ -16,6 +16,7 @@ import time
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename  # **ADDED secure_filename**
 
+WORD_LIMIT = 50000
 
 # Define Database Models
 class Conversation(db.Model):
