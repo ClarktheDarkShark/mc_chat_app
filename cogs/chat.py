@@ -39,8 +39,10 @@ class Message(db.Model):
 class UploadedFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(100), nullable=False)
-    filename = db.Column(db.String(255), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)             # Unique filename with UUID
+    original_filename = db.Column(db.String(255), nullable=False)    # Original filename
     file_url = db.Column(db.String(500), nullable=False)
+    file_type = db.Column(db.String(100), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatBlueprint:
@@ -454,9 +456,10 @@ class ChatBlueprint:
                     "assistant_reply": assistant_reply,
                     "conversation_history": conversation_history,
                     "intent": intent,
-                    "fileUrl": file_url,         # **ADDED**
-                    "fileName": filename if file_url else None,   # **ADDED**
-                    "fileType": file_type if file_url else None    # **ADDED**
+                    "fileUrl": uploaded_file.file_url,         # Correct URL with UUID
+                    "fileName": uploaded_file.original_filename if uploaded_file else None,   # Original filename
+                    "fileType": uploaded_file.file_type if uploaded_file else None,         # File MIME type
+                    "fileId": uploaded_file.id if uploaded_file else None   # **ADDED**
                 })
 
             except Exception as e:
