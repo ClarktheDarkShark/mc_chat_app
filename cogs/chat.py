@@ -245,9 +245,9 @@ class ChatBlueprint:
                 print('If file')
                 print()
                 print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-                intent = self.analyze_user_intent(user_message + "A file was uploaded. The text is likely refering to this file.", conversation_history)
+                intent = self.analyze_user_intent(user_message + "A file was uploaded. The text is likely refering to this file.", conversation_history, session_id)
             else:
-                intent = self.analyze_user_intent(user_message, conversation_history)
+                intent = self.analyze_user_intent(user_message, conversation_history, session_id)
 
             print()
             print('intent', intent)
@@ -278,6 +278,10 @@ class ChatBlueprint:
                         "fileName": filename if file_url else None,   # **ADDED**
                         "fileType": file_type if file_url else None    # **ADDED**
                     })
+                
+                elif intent.get("file_intent, False"):
+
+                    pass
 
                 elif intent.get("code_intent", False):
                     # Handle code-related intents
@@ -324,6 +328,8 @@ class ChatBlueprint:
                     temp_conversation = copy.deepcopy(conversation_history)
                     temp_conversation[-1]['content'] += (f'\n{file_content}\n')
 
+
+
                 def trim_conversation(temp_conversation, max_tokens=50000):
                     print('Before trim: temp_conversation', temp_conversation)
                     
@@ -344,6 +350,7 @@ class ChatBlueprint:
                     
                     print('After trim: temp_conversation', trimmed)
                     return trimmed
+
                 # Trim the conversation if it exceeds 8000 tokens
                 temp_conversation = trim_conversation(temp_conversation, 50000)
 
@@ -430,8 +437,13 @@ class ChatBlueprint:
         db.session.add(msg)
         db.session.commit()
 
-    def analyze_user_intent(self, user_input, conversation_hist):
+    def analyze_user_intent(self, user_input, conversation_hist, session_id=None):
         """Analyze user intent using OpenAI and return a JSON object."""
+
+        # Fetch the list of uploaded files for the current session
+        uploaded_files = UploadedFile.query.filter_by(session_id=session_id).all()
+        file_list = "\n".join([f"File ID: {file.id}, Filename: {file.filename}" for file in uploaded_files])
+        
         analysis_prompt = [
             {
                 'role': 'system', 
@@ -440,7 +452,8 @@ class ChatBlueprint:
                     '- "image_generation": (boolean)\n'
                     '- "image_prompt": (string)\n'
                     '- "internet_search": (boolean)\n'
-                    '- "favorite_songs": (boolean)\n'
+                    '- "file_intent": (boolean)\n'
+                    '- "file_id": (string)\n'
                     '- "active_users": (boolean)\n'
                     '- "code_intent": (boolean)\n'
                     '- "rand_num": (list)\n\n'
@@ -449,10 +462,11 @@ class ChatBlueprint:
                     '1. **image_generation** should be True only when an image is requested. Example: "Can you show me a USMC officer saluting?"\n'
                     '2. **image_prompt** should contain the prompt for image generation if **image_generation** is True.\n'
                     '3. **internet_search** should be True when the user asks for information that might require an internet search. If asking about an uploaded file, set to False.\n'
-                    '4. **favorite_songs** should be True when the user interacts with song-related commands.\n'
-                    '5. **active_users** should be True if there is a question about the most active users.\n'
-                    '6. **code_intent** should be True when the user is asking about code-related queries or commands starting with "!".\n'
-                    '7. **rand_num** should contain [lowest_num, highest_num] if the user requests a random number within a range.\n\n'
+                    '4. **file_intent** should be True when the user asks for information about a file that has been uploaded.\n'
+                    '5. **file_id** should contain the file_id for the requested file if **file_intent** is True. Detect file references in the format "FILE:<id>".\n'
+                    '6. **active_users** should be True if there is a question about the most active users.\n'
+                    '7. **code_intent** should be True when the user is asking about code-related queries or commands starting with "!".\n'
+                    '8. **rand_num** should contain [lowest_num, highest_num] if the user requests a random number within a range.\n\n'
                     'Respond in JSON format.\nIMPORTANT: Boolean values only: True or False.'
                 )
             },
@@ -463,7 +477,7 @@ class ChatBlueprint:
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",  # Correct model name
+                model="gpt-4o",  # Correct model name
                 messages=analysis_prompt,
                 max_tokens=300,
                 temperature=0
@@ -471,6 +485,15 @@ class ChatBlueprint:
             intent_json = response.choices[0].message.content.strip()
             # Ensure the response is valid JSON
             intent = json.loads(intent_json)
+
+            # Additional logic to parse file_id if file_intent is detected
+            if intent.get("file_intent", False):
+                # Extract file_id from user_input, assuming format "FILE:<id>"
+                import re
+                match = re.search(r"FILE:(\d+)", user_input)
+                if match:
+                    intent["file_id"] = match.group(1)
+                    
             return intent
         except Exception as e:
             print()
@@ -481,7 +504,8 @@ class ChatBlueprint:
                 "image_generation": False,
                 "image_prompt": "",
                 "internet_search": False,
-                "favorite_songs": False,
+                "file_intent": False,
+                "file_id": ""
                 "active_users": False,
                 "code_intent": False,
                 "rand_num": []
