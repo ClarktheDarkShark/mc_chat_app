@@ -70,16 +70,11 @@ class ChatBlueprint:
     def add_routes(self):
         @self.bp.route("/chat", methods=["POST"])
         def chat():
-
-            user_message = request.form.get("message", "")
-            if not user_message and not file_url:
-                return jsonify({"error": "No message or file provided"}), 400
-
             # Ensure session has a unique session_id
             if 'session_id' not in session:
                 session['session_id'] = str(uuid.uuid4())
             session_id = session['session_id']
-
+            
             file_content = ''
             file = None
             additional_instructions = (
@@ -92,6 +87,7 @@ class ChatBlueprint:
                 # **HANDLE FILE UPLOAD**
 
                 # Extract form data
+                user_message = request.form.get("message", "")
                 model = request.form.get("model", "gpt-4o")
                 temperature = float(request.form.get("temperature", 0.7))
                 system_prompt = request.form.get(
@@ -198,6 +194,9 @@ class ChatBlueprint:
                 )
                 file_url = None
                 file_type = None
+
+            if not user_message and not file_url:
+                return jsonify({"error": "No message or file provided"}), 400
 
 
             # Check if there's a current conversation
