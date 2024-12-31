@@ -502,6 +502,9 @@ class ChatBlueprint:
                 max_tokens=300,
                 temperature=0
             )
+
+            print("Full Response:", response)
+            
             intent_json = response.choices[0].message.content.strip()
             # Ensure the response is valid JSON
             intent = json.loads(intent_json)
