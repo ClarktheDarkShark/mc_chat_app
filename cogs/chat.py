@@ -514,7 +514,7 @@ class ChatBlueprint:
                     "assistant_reply": assistant_reply,
                     "conversation_history": conversation_history,
                     "intent": intent,
-                    "fileUrl": uploaded_file.file_url,         # Correct URL with UUID
+                    "fileUrl": uploaded_file.file_url if uploaded_file else None,         # Correct URL with UUID
                     "fileName": uploaded_file.original_filename if uploaded_file else None,   # Original filename
                     "fileType": uploaded_file.file_type if uploaded_file else None,         # File MIME type
                     "fileId": uploaded_file.id if uploaded_file else None   # **ADDED**
