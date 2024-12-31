@@ -120,7 +120,7 @@ class ChatBlueprint:
                     # **INSERT INTO DATABASE**
                     uploaded_file = UploadedFile(
                         session_id=session_id,
-                        filename=filename,
+                        filename=unique_filename,
                         file_url=f"/uploads/{unique_filename}"  # Assuming you serve files from this path
                     )
                     db.session.add(uploaded_file)
