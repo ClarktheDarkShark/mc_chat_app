@@ -335,26 +335,69 @@ class ChatBlueprint:
                             if os.path.exists(file_path):
                                 try:
                                     print('Reading file...')
-                                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                                        file_content = f.read()
-                                    
-                                    # Truncate content if necessary
-                                    max_tokens = 50000
-                                    words = file_content.split()
-                                    if len(words) > max_tokens:
-                                        file_content = ' '.join(words[:max_tokens]) + "\n\n[Content truncated...]"
-                                    
-                                    temp_conversation[-1]['content'] = (
-                                        f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
-                                        f"\n\nUser Query:\n***{user_message}***"
-                                    )
-                                    # assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
-                                    print('assistant_reply')
+
+                                    # Detect file type by extension or MIME type
+                                    file_extension = os.path.splitext(file_path)[1].lower()
+
+                                    if file_extension == '.pdf':
+                                        try:
+                                            reader = PdfReader(file_path)
+                                            file_content = ""
+                                            for page in reader.pages:
+                                                file_content += page.extract_text() or ""
+                                            
+                                            # Truncate to 50,000 words
+                                            words = file_content.split()
+                                            if len(words) > WORD_LIMIT:
+                                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                                            if not file_content.strip():
+                                                file_content = "Unable to extract text from this PDF."
+
+                                        except Exception as e:
+                                            print("Error reading PDF:", e)
+                                            file_content = "Error processing PDF file."
+
+                                    elif file_extension in ['.docx', '.doc']:
+                                        try:
+                                            doc = Document(file_path)
+                                            file_content = "\n".join([p.text for p in doc.paragraphs])
+
+                                            words = file_content.split()
+                                            if len(words) > WORD_LIMIT:
+                                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                                        except Exception as e:
+                                            print("Error reading DOCX:", e)
+                                            file_content = "Error processing Word file."
+
+                                    elif file_extension in ['.xlsx', '.xls']:
+                                        try:
+                                            wb = load_workbook(file_path)
+                                            sheet = wb.active
+                                            file_content = ""
+                                            for row in sheet.iter_rows(values_only=True):
+                                                file_content += ' '.join(str(cell) for cell in row if cell is not None) + "\n"
+
+                                            words = file_content.split()
+                                            if len(words) > WORD_LIMIT:
+                                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                                        except Exception as e:
+                                            print("Error reading Excel file:", e)
+                                            file_content = "Error processing Excel file."
+
+                                    else:
+                                        # Default to plain text reading for other file types
+                                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                            file_content = f.read()
+
                                 except Exception as e:
-                                    print(f"Error reading file: {e}")
-                                
+                                    print("Error reading file:", e)
+                                    file_content = "Error processing file."
                             else:
-                                print(f"File not found: {file_path}")
+                                print("File not found.")
+                                file_content = "File not found."
                                 
                                 # Optional: Remove stale DB entry
                                 db.session.delete(uploaded_file)
