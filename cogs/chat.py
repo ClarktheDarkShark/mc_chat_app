@@ -238,7 +238,15 @@ class ChatBlueprint:
                     db.session.commit()
 
             # Analyze user intent
-            intent = self.analyze_user_intent(user_message, conversation_history)
+            if file:
+                print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+                print()
+                print('If file')
+                print()
+                print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+                intent = self.analyze_user_intent(user_message + "A file was uploaded. The text is likely refering to this file.", conversation_history)
+            else:
+                intent = self.analyze_user_intent(user_message, conversation_history)
 
             print()
             print('intent', intent)
