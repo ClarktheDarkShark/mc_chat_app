@@ -63,6 +63,7 @@ class ChatBlueprint:
         @self.bp.route("/chat", methods=["POST"])
         def chat():
             file_content = ''
+            file = None
             additional_instructions = (
                 "You are an AI assistant that generates structured and easy-to-read responses.  \n"
                 "Provide responses using correct markdown format. It is critical that markdown format is used with nothing additional.  \n"
