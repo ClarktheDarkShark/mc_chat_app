@@ -68,7 +68,6 @@ class ChatBlueprint:
     def add_routes(self):
         @self.bp.route("/chat", methods=["POST"])
         def chat():
-            WORD_LIMIT = 50000
             try:
                 # Ensure session has a unique session_id
                 if 'session_id' not in session:
@@ -76,19 +75,42 @@ class ChatBlueprint:
                 session_id = session['session_id']
                 
                 # Retrieve system prompt from request or use default
-                system_prompt = request.form.get(
-                    "system_prompt",
-                    "You are boring..."
-                )
+                system_prompt = ""
+                if request.content_type.startswith('multipart/form-data'):
+                    system_prompt = request.form.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
+                elif request.is_json:
+                    data = request.get_json()
+                    system_prompt = data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
+                else:
+                    system_prompt = "You are a USMC AI agent. Provide relevant responses."  # Fallback default
+                
                 print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-                print()
-
-                print('system_prompt', system_prompt)
-                print()
+                print(f"System Prompt: {system_prompt}")
                 print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+                
+                # Retrieve other parameters
+                if request.content_type.startswith('multipart/form-data'):
+                    message = request.form.get("message", "")
+                    model = request.form.get("model", "gpt-4o")
+                    try:
+                        temperature = float(request.form.get("temperature", 0.7))
+                    except ValueError:
+                        temperature = 0.7  # Default temperature
+                elif request.is_json:
+                    data = request.get_json()
+                    message = data.get("message", "")
+                    model = data.get("model", "gpt-4o")
+                    try:
+                        temperature = float(data.get("temperature", 0.7))
+                    except ValueError:
+                        temperature = 0.7  # Default temperature
+                else:
+                    message = ""
+                    model = "gpt-4o"
+                    temperature = 0.7
 
-                model = request.form.get("model", "gpt-4o")
-                temperature = float(request.form.get("temperature", 0.7))
+                print(f"Model: {model}, Temperature: {temperature}")
+                print(f"User Message: {message}")
 
                 file_content = ''
                 file = None
@@ -110,7 +132,7 @@ class ChatBlueprint:
                     # HANDLE FILE UPLOAD
 
                     # Extract form data
-                    user_message = request.form.get("message", "")
+                    user_message = message
                     file = request.files.get("file", None)
 
                     if file:
@@ -202,13 +224,19 @@ class ChatBlueprint:
                         file_url = None
                         file_type = None
                         file_content = ''
+                    # print()
+                    # print('file_content', file_content)
                 else:
                     # HANDLE JSON REQUEST
-                    data = request.get_json()
-                    if data:
+                    if request.is_json:
+                        data = request.get_json()
                         user_message = data.get("message", "")
-                    file_url = None
-                    file_type = None
+                        file_url = None
+                        file_type = None
+                    else:
+                        user_message = ""
+                        file_url = None
+                        file_type = None
 
                 if not user_message and not file_url:
                     return jsonify({"error": "No message or file provided"}), 400
@@ -417,191 +445,4 @@ class ChatBlueprint:
                     "conversation_history": conversation_history,
                     "intent": intent,
                     "fileUrl": uploaded_file.file_url if uploaded_file else None,         # Correct URL with UUID
-                    "fileName": uploaded_file.original_filename if uploaded_file else None,   # Original filename
-                    "fileType": uploaded_file.file_type if uploaded_file else None,         # File MIME type
-                    "fileId": uploaded_file.id if uploaded_file else None   # ADDED
-                })
-
-            except Exception as e:
-                return jsonify({"error": str(e)}), 500
-
-        @self.bp.route("/uploads/<path:filename>", methods=["GET"])
-        def uploaded_file(filename):
-            # Ensure the request is part of the current session
-            session_id = session.get('session_id', None)
-            if not session_id:
-                return jsonify({"error": "Unauthorized access"}), 403
-            
-            # Verify that the requested file belongs to the current session
-            file_entry = UploadedFile.query.filter_by(session_id=session_id, file_url=f"/uploads/{filename}").first()
-            if not file_entry:
-                return jsonify({"error": "File not found"}), 404
-            
-            # Serve the file
-            return send_from_directory(self.upload_folder, filename)
-    
-            
-        @self.bp.route("/conversations", methods=["GET"])
-        def get_conversations():
-            # Fetch recent conversations for the current session
-            session_id = session.get('session_id', 'unknown_session')
-            conversations = Conversation.query.filter_by(session_id=session_id).order_by(Conversation.timestamp.desc()).limit(10).all()
-            convo_list = [{
-                "id": convo.id,
-                "title": convo.title,
-                "timestamp": convo.timestamp.isoformat()
-            } for convo in conversations]
-            return jsonify({"conversations": convo_list})
-
-        @self.bp.route("/conversations/<int:conversation_id>", methods=["GET"])
-        def get_conversation(conversation_id):
-            # Fetch a specific conversation's messages
-            conversation = Conversation.query.get(conversation_id)
-            if not conversation:
-                return jsonify({"error": "Conversation not found"}), 404
-            session_id = session.get('session_id', 'unknown_session')
-            if conversation.session_id != session_id:
-                return jsonify({"error": "Unauthorized access"}), 403
-            messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
-            conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
-            return jsonify({"conversation_history": conversation_history})
-
-        @self.bp.route("/conversations/new", methods=["POST"])
-        def new_conversation():
-            session_id = session.get('session_id', 'unknown_session')
-            data = request.get_json()
-            title = data.get('title', 'New Conversation')
-            new_convo = Conversation(
-                session_id=session_id,
-                title=title
-            )
-            db.session.add(new_convo)
-            db.session.commit()
-            session['current_conversation_id'] = new_convo.id
-            return jsonify({"conversation_id": new_convo.id, "title": new_convo.title, "timestamp": new_convo.timestamp.isoformat()})
-
-    def save_messages(self, conversation_id, role, content):
-        """Save a message to the database."""
-        msg = Message(
-            conversation_id=conversation_id,
-            role=role,
-            content=content
-        )
-        db.session.add(msg)
-        db.session.commit()
-
-    def analyze_user_intent(self, messages, session_id=None):
-        """Analyze user intent using OpenAI and return a JSON object."""
-
-        # Fetch the list of uploaded files for the current session
-        uploaded_files = UploadedFile.query.filter_by(session_id=session_id).all()
-
-        file_list = "\n".join([f"File ID: {file.id}, Filename: {file.filename}" for file in uploaded_files])
-
-        analysis_prompt = [
-            {
-                'role': 'system', 
-                'content': (
-                    'As an AI assistant, analyze the user input, including the last 5 user queries, and output a JSON object with the following keys:\n'
-                    '- "image_generation": (boolean)\n'
-                    '- "image_prompt": (string)\n'
-                    '- "internet_search": (boolean)\n'
-                    '- "file_intent": (boolean)\n'
-                    '- "file_id": (string)\n'
-                    '- "active_users": (boolean)\n'
-                    '- "code_intent": (boolean)\n'
-                    '- "rand_num": (list)\n\n'
-                    'Respond with only the JSON object and no additional text.\n\n'
-                    'Guidelines:\n'
-                    '1. **image_generation** should be True only when an image is requested. Example: "Can you show me a USMC officer saluting?"\n'
-                    '2. **image_prompt** should contain the prompt for image generation if **image_generation** is True.\n'
-                    '3. **internet_search** should be True when the user asks for information that might require an internet search. If asking about an uploaded file, set to False.\n'
-                    f'4. **file_intent** should be True when the user asks for information about a file that has been uploaded. Set to True if asked about one of these files:\n{file_list}\n'
-                    '5. **file_id** should contain the file_id for the requested file if **file_intent** is True. Detect file references in the format "FILE:<id>".\n'
-                    '6. **active_users** should be True if there is a question about the most active users.\n'
-                    '7. **code_intent** should be True when the user is asking about code-related queries or commands starting with "!".\n'
-                    '8. **rand_num** should contain [lowest_num, highest_num] if the user requests a random number within a range.\n\n'
-                    'Respond in JSON format.\nIMPORTANT: Boolean values only: True or False.'
-                )
-            },
-            {'role': 'user', 'content': f"User input: '{messages[-1]['content']}'\n\nDetermine the user's intent and required actions."}
-        ]
-
-        # Include the last 5 messages for context, excluding system messages
-        user_assistant_messages = [msg for msg in messages if msg['role'] in ['user', 'assistant']]
-        last_five = user_assistant_messages[-5:]
-        analysis_prompt.extend(last_five)
-
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o",  # Correct model name
-                messages=analysis_prompt,
-                max_tokens=300,
-                temperature=0
-            )
-
-            print("Full Intent Analysis Response:", response)
-
-            intent_json = response.choices[0].message.content.strip()
-
-            # Handle markdown-wrapped JSON
-            if intent_json.startswith("```json"):
-                intent_json = intent_json[7:-3].strip()  # Strip off ```json and ```
-            elif intent_json.startswith("```") and intent_json.endswith("```"):
-                intent_json = intent_json[3:-3].strip()
-
-            # Ensure the response is valid JSON
-            intent = json.loads(intent_json)
-
-            # Additional logic to parse file_id if file_intent is detected
-            if intent.get("file_intent", False):
-                # Extract file_id from the last user message, assuming format "FILE:<id>"
-                import re
-                match = re.search(r"FILE:(\d+)", messages[-1]['content'])
-                if match:
-                    intent["file_id"] = match.group(1)
-
-            return intent
-        except Exception as e:
-            print(f'Error in analyzing user intent: {e}')
-            # Return default intent if analysis fails
-            return {
-                "image_generation": False,
-                "image_prompt": "",
-                "internet_search": False,
-                "file_intent": False,
-                "file_id": "",
-                "active_users": False,
-                "code_intent": False,
-                "rand_num": []
-            }
-
-    def generate_image(self, prompt):
-        """Generate an image using OpenAI's DALL-E 3 and return the image URL."""
-        try:
-            image_response = self.client.images.generate(
-                model="dall-e-3",
-                prompt=prompt,
-                size="1024x1024",
-                n=1
-            )
-            image_url = image_response.data[0].url
-            return image_url
-        except Exception as e:
-            print(f'Error in image generation: {e}')
-            return "Error generating image."
-
-    def generate_chat_response(self, messages, model, temperature):
-        """Generate a chat response using OpenAI's ChatCompletion."""
-        try:
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=messages,
-                max_tokens=2000,  # Adjust based on requirements
-                temperature=temperature
-            )
-            assistant_reply = response.choices[0].message.content
-            return assistant_reply
-        except Exception as e:
-            print(f'Error in chat response generation: {e}')
-            return "Error generating response."
+                    "fileName": uploaded_file.origi
