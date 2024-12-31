@@ -108,9 +108,6 @@ class ChatBlueprint:
                 # Extract form data
                 user_message = request.form.get("message", "")
 
-                
-
-
                 file = request.files.get("file", None)
 
                 if file:
@@ -238,8 +235,8 @@ class ChatBlueprint:
                 return jsonify({"error": "Conversation not found or unauthorized"}), 404
 
             # Get messages for the conversation
-            messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
-            conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
+            messages_db = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
+            conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages_db]
 
             # Add system prompt if first message
             if not conversation_history:
@@ -294,155 +291,15 @@ class ChatBlueprint:
             # Handle different intents
             assistant_reply = ""
             try:
-                if intent.get("image_generation", False):
-                    # Generate Image using DALL-E 3
-                    prompt = intent.get("image_prompt", "")
-                    if prompt:
-                        image_url = self.generate_image(prompt)
-                        assistant_reply = f"![Generated Image]({image_url})"
-                        conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        # Save messages
-                        self.save_messages(conversation_id, "assistant", assistant_reply)
-                    else:
-                        assistant_reply = "No image prompt provided."
-                        conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        self.save_messages(conversation_id, "assistant", assistant_reply)
-                    return jsonify({
-                        "user_message": user_message,
-                        "assistant_reply": assistant_reply,
-                        "conversation_history": conversation_history,
-                        "intent": intent,
-                        "fileUrl": file_url,         # **ADDED**
-                        "fileName": filename if file_url else None,   # **ADDED**
-                        "fileType": file_type if file_url else None,    # **ADDED**
-                        "fileId": uploaded_file.id if uploaded_file else None
-                    })
-                                
-                elif intent.get("file_intent", False):
-                    temp_conversation = copy.deepcopy(conversation_history)
-                    print('In file intent True')
-                    file_id = intent.get("file_id")
+                # Initialize messages with system prompt
+                messages = [{
+                    "role": "system",
+                    "content": system_prompt + '\n' + additional_instructions
+                }]
 
-                    if not file_id:
-                        assistant_reply = "No file ID provided."
-                    else:
-                        # Retrieve the file from the database
-                        print('Uploading file...')
-                        uploaded_file = UploadedFile.query.get(file_id)
-                        print('File upload complete...')
-                        
-                        if uploaded_file:
-                            file_path = os.path.join(self.upload_folder, uploaded_file.filename)
-                            
-                            # Check if the file exists
-                            if os.path.exists(file_path):
-                                try:
-                                    WORD_LIMIT = 50000
-                                    print('Reading file...')
-
-                                    # Detect file type by extension or MIME type
-                                    file_extension = os.path.splitext(file_path)[1].lower()
-
-                                    if file_extension == '.pdf':
-                                        try:
-                                            reader = PdfReader(file_path)
-                                            file_content = ""
-                                            for page in reader.pages:
-                                                file_content += page.extract_text() or ""
-                                            
-                                            # Truncate to 50,000 words
-                                            words = file_content.split()
-                                            if len(words) > WORD_LIMIT:
-                                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
-
-                                            if not file_content.strip():
-                                                file_content = "Unable to extract text from this PDF."
-
-                                        except Exception as e:
-                                            print("Error reading PDF:", e)
-                                            file_content = "Error processing PDF file."
-
-                                    elif file_extension in ['.docx', '.doc']:
-                                        try:
-                                            doc = Document(file_path)
-                                            file_content = "\n".join([p.text for p in doc.paragraphs])
-
-                                            words = file_content.split()
-                                            if len(words) > WORD_LIMIT:
-                                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
-
-                                        except Exception as e:
-                                            print("Error reading DOCX:", e)
-                                            file_content = "Error processing Word file."
-
-                                    elif file_extension in ['.xlsx', '.xls']:
-                                        try:
-                                            wb = load_workbook(file_path)
-                                            sheet = wb.active
-                                            file_content = ""
-                                            for row in sheet.iter_rows(values_only=True):
-                                                file_content += ' '.join(str(cell) for cell in row if cell is not None) + "\n"
-
-                                            words = file_content.split()
-                                            if len(words) > WORD_LIMIT:
-                                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
-
-                                        except Exception as e:
-                                            print("Error reading Excel file:", e)
-                                            file_content = "Error processing Excel file."
-
-                                    else:
-                                        # Default to plain text reading for other file types
-                                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                                            file_content = f.read()
-
-                                    temp_conversation[-1]['content'] = (
-                                        '\n\nYou are being supplemented with the following information from the file.\n '
-                                        f"User Query:\n***{file_content}***"
-                                    )
-                                except Exception as e:
-                                    print("Error reading file:", e)
-                                    file_content = "Error processing file."
-                            else:
-                                print("File not found.")
-                                file_content = "File not found."
-                                
-                                # Optional: Remove stale DB entry
-                                db.session.delete(uploaded_file)
-                                db.session.commit()
-                                print(f"Removed stale entry for '{uploaded_file.filename}' from the database.")
-                        
-
-                    # Add the assistant reply to the conversation history
-                    conversation_history.append({"role": "assistant", "content": assistant_reply})
-                    self.save_messages(conversation_id, "assistant", assistant_reply)
-
-                elif intent.get("code_intent", False):
-                    # Handle code-related intents
-                    code_content = self.code_files_cog.get_all_code_files_content()
-                    if code_content:
-                        # Append code content to the system prompt
-                        temp_conversation = copy.deepcopy(conversation_history)
-                        temp_conversation[0]['content'] += "\n\n" + code_content
-                        temp_conversation[-1]['content'] += '\n\nYou have been supplemented with information from your code base to answer this query.'
-                        intent['code_intent'] = True  # Ensure intent shows True
-                    else:
-                        assistant_reply = "No code files found to provide."
-                        conversation_history.append({"role": "assistant", "content": assistant_reply})
-                        self.save_messages(conversation_id, "assistant", assistant_reply)
-                        return jsonify({
-                            "user_message": user_message,
-                            "assistant_reply": assistant_reply,
-                            "conversation_history": conversation_history,
-                            "intent": intent,
-                            "fileUrl": file_url,         # **ADDED**
-                            "fileName": filename if file_url else None,   # **ADDED**
-                            "fileType": file_type if file_url else None,    # **ADDED**
-                            "fileId": uploaded_file.id if uploaded_file else None
-                        })
-
-                elif intent.get("internet_search", False):
-                    # Handle internet search
+                # Generate supplemental information based on intent
+                supplemental_information = {}
+                if intent.get("internet_search", False):
                     query = user_message  # Or extract a specific part of the message
                     search_content = self.web_search_cog.web_search(query, conversation_history)
                     sys_search_content = (
@@ -450,29 +307,139 @@ class ChatBlueprint:
                         'Give a confident answer based on this. Only use the most relevant and accurate information that matches the User Query. '
                         'Always include the source with the provided url as [source](url)'
                     )
+                    supplemental_information = {
+                        "role": "system",
+                        "content": (
+                            f"{sys_search_content}\n\nInternet Content:\n***{search_content}***"
+                        )
+                    }
+                elif intent.get("file_intent", False):
+                    file_id = intent.get("file_id")
+                    if not file_id:
+                        assistant_reply = "No file ID provided."
+                    else:
+                        # Retrieve the file from the database
+                        print('Uploading file...')
+                        uploaded_file_intent = UploadedFile.query.get(file_id)
+                        print('File upload complete...')
+                        
+                        if uploaded_file_intent:
+                            file_path_intent = os.path.join(self.upload_folder, uploaded_file_intent.filename)
+                            
+                            # Check if the file exists
+                            if os.path.exists(file_path_intent):
+                                try:
+                                    WORD_LIMIT = 50000
+                                    print('Reading file...')
 
-                    # Integrate the internet content into the system prompt
-                    temp_conversation = copy.deepcopy(conversation_history)
-                    temp_conversation[0]['content'] += sys_search_content
-                    temp_conversation[-1]['content'] = (
-                        '\n\nYou are being supplemented with the following information from the internet to answer user query. '
-                        f"Internet Content:\n***{search_content}***\n\nUser Query:\n***{user_message}***"
-                    )
-                else:
-                    print('in else: conversation_history', conversation_history)
-                    temp_conversation = copy.deepcopy(conversation_history)
-                    # temp_conversation[-1]['content'] = (f'\n{file_content}\n') + temp_conversation[-1]['content']
+                                    # Detect file type by extension or MIME type
+                                    file_extension = os.path.splitext(file_path_intent)[1].lower()
 
+                                    if file_extension == '.pdf':
+                                        try:
+                                            reader = PdfReader(file_path_intent)
+                                            file_content_intent = ""
+                                            for page in reader.pages:
+                                                file_content_intent += page.extract_text() or ""
+                                            
+                                            # Truncate to 50,000 words
+                                            words = file_content_intent.split()
+                                            if len(words) > WORD_LIMIT:
+                                                file_content_intent = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
 
+                                            if not file_content_intent.strip():
+                                                file_content_intent = "Unable to extract text from this PDF."
 
-                def trim_conversation(temp_conversation, max_tokens=50000):
-                    # print('Before trim: temp_conversation', temp_conversation)
-                    
+                                        except Exception as e:
+                                            print("Error reading PDF:", e)
+                                            file_content_intent = "Error processing PDF file."
+
+                                    elif file_extension in ['.docx', '.doc']:
+                                        try:
+                                            doc = Document(file_path_intent)
+                                            file_content_intent = "\n".join([p.text for p in doc.paragraphs])
+
+                                            words = file_content_intent.split()
+                                            if len(words) > WORD_LIMIT:
+                                                file_content_intent = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                                        except Exception as e:
+                                            print("Error reading DOCX:", e)
+                                            file_content_intent = "Error processing Word file."
+
+                                    elif file_extension in ['.xlsx', '.xls']:
+                                        try:
+                                            wb = load_workbook(file_path_intent)
+                                            sheet = wb.active
+                                            file_content_intent = ""
+                                            for row in sheet.iter_rows(values_only=True):
+                                                file_content_intent += ' '.join(str(cell) for cell in row if cell is not None) + "\n"
+
+                                            words = file_content_intent.split()
+                                            if len(words) > WORD_LIMIT:
+                                                file_content_intent = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                                        except Exception as e:
+                                            print("Error reading Excel file:", e)
+                                            file_content_intent = "Error processing Excel file."
+
+                                    else:
+                                        # Default to plain text reading for other file types
+                                        with open(file_path_intent, 'r', encoding='utf-8', errors='ignore') as f:
+                                            file_content_intent = f.read()
+
+                                    supplemental_information = {
+                                        "role": "system",
+                                        "content": (
+                                            '\n\nYou are being supplemented with the following information from the file.\n'
+                                            f"File Content:\n***{file_content_intent}***"
+                                        )
+                                    }
+                                except Exception as e:
+                                    print("Error reading file:", e)
+                                    file_content_intent = "Error processing file."
+                            else:
+                                print("File not found.")
+                                file_content_intent = "File not found."
+                                
+                                # Optional: Remove stale DB entry
+                                db.session.delete(uploaded_file_intent)
+                                db.session.commit()
+                                print(f"Removed stale entry for '{uploaded_file_intent.filename}' from the database.")
+                        else:
+                            assistant_reply = "Uploaded file not found."
+                elif intent.get("code_intent", False):
+                    # Handle code-related intents
+                    code_content = self.code_files_cog.get_all_code_files_content()
+                    if code_content:
+                        supplemental_information = {
+                            "role": "system",
+                            "content": (
+                                f"\n\nYou have been supplemented with information from your code base to answer this query.\n***{code_content}***"
+                            )
+                        }
+                    else:
+                        assistant_reply = "No code files found to provide."
+
+                # Append conversation history to messages
+                messages.extend(conversation_history)
+
+                # Append supplemental_information if any
+                if supplemental_information:
+                    messages.append(supplemental_information)
+
+                # Append user message
+                messages.append({"role": "user", "content": user_message})
+
+                print('Final messages:', messages)
+
+                # Trim the conversation if it exceeds 50,000 tokens
+                def trim_conversation(messages, max_tokens=50000):
                     encoding = tiktoken.encoding_for_model("gpt-4o")
                     total_tokens = 0
                     trimmed = []
                     
-                    for message in reversed(temp_conversation):
+                    for message in reversed(messages):
                         message_tokens = len(encoding.encode(json.dumps(message)))
                         if total_tokens + message_tokens > max_tokens:
                             break
@@ -480,24 +447,21 @@ class ChatBlueprint:
                         total_tokens += message_tokens
                     
                     # Ensure at least one message is included
-                    if not trimmed and temp_conversation:
-                        trimmed.append(temp_conversation[-1])
+                    if not trimmed and messages:
+                        trimmed.append(messages[-1])
                     
-                    # print('After trim: temp_conversation', trimmed)
                     return trimmed
 
-                # Trim the conversation if it exceeds 8000 tokens
-                
-                temp_conversation = trim_conversation(temp_conversation, 50000)
+                messages = trim_conversation(messages, 50000)
 
-                # Regular Chat Response
+                # Generate chat response using the new messages format
                 print('***************************************************************************************************************')
                 print()
-                print('temp_conversation', temp_conversation)
+                print('Trimmed messages:', messages)
                 print('***************************************************************************************************************')
                 print()
                 start_time = time.time()
-                assistant_reply = self.generate_chat_response(temp_conversation, model, temperature)
+                assistant_reply = self.generate_chat_response(messages, model, temperature)
                 end_time = time.time()
                 print()
                 print("generate_chat_response took %s seconds", end_time - start_time)
@@ -539,8 +503,8 @@ class ChatBlueprint:
             
             # Serve the file
             return send_from_directory(self.upload_folder, filename)
-
-            
+    
+                
         @self.bp.route("/conversations", methods=["GET"])
         def get_conversations():
             # Fetch recent conversations for the current session
@@ -690,12 +654,12 @@ class ChatBlueprint:
             print()
             return "Error generating image."
 
-    def generate_chat_response(self, conversation, model, temperature):
+    def generate_chat_response(self, messages, model, temperature):
         """Generate a chat response using OpenAI's ChatCompletion."""
         try:
             response = self.client.chat.completions.create(
                 model=model,
-                messages=conversation,
+                messages=messages,
                 max_tokens=2000,  # You might want to set this based on requirements
                 temperature=temperature
             )
