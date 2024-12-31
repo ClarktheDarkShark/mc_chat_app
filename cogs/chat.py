@@ -343,24 +343,23 @@ class ChatBlueprint:
                                     if len(words) > max_tokens:
                                         file_content = ' '.join(words[:max_tokens]) + "\n\n[Content truncated...]"
                                     
-                                    assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
-                                
+                                    temp_conversation[-1]['content'] = (
+                                        f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
+                                        f"\n\nUser Query:\n***{user_message}***"
+                                    )
+                                    # assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
+                                    print('assistant_reply')
                                 except Exception as e:
                                     print(f"Error reading file: {e}")
-                                    assistant_reply = f"Could not read the file '{uploaded_file.filename}'."
+                                
                             else:
                                 print(f"File not found: {file_path}")
-                                assistant_reply = f"File '{uploaded_file.filename}' not found. It may have been deleted or the session expired."
                                 
                                 # Optional: Remove stale DB entry
                                 db.session.delete(uploaded_file)
                                 db.session.commit()
                                 print(f"Removed stale entry for '{uploaded_file.filename}' from the database.")
                         
-                        else:
-                            assistant_reply = f"File with ID {file_id} not found in the database."
-
-
 
                     # Add the assistant reply to the conversation history
                     conversation_history.append({"role": "assistant", "content": assistant_reply})
