@@ -462,9 +462,7 @@ class ChatBlueprint:
         uploaded_files = UploadedFile.query.filter_by(session_id=session_id).all()
 
         file_list = "\n".join([f"File ID: {file.id}, Filename: {file.filename}" for file in uploaded_files])
-        print()
-        print('uploaded_files', file_list)
-        print()
+
         
         analysis_prompt = [
             {
@@ -484,7 +482,7 @@ class ChatBlueprint:
                     '1. **image_generation** should be True only when an image is requested. Example: "Can you show me a USMC officer saluting?"\n'
                     '2. **image_prompt** should contain the prompt for image generation if **image_generation** is True.\n'
                     '3. **internet_search** should be True when the user asks for information that might require an internet search. If asking about an uploaded file, set to False.\n'
-                    f'4. **file_intent** should be True when the user asks for information about a file that has been uploaded. Set to True is asked about one of these files:\n{uploaded_files}\n'
+                    f'4. **file_intent** should be True when the user asks for information about a file that has been uploaded. Set to True is asked about one of these files:\n{file_list}\n'
                     '5. **file_id** should contain the file_id for the requested file if **file_intent** is True. Detect file references in the format "FILE:<id>".\n'
                     '6. **active_users** should be True if there is a question about the most active users.\n'
                     '7. **code_intent** should be True when the user is asking about code-related queries or commands starting with "!".\n'
