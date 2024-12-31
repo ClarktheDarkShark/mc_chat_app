@@ -678,7 +678,7 @@ Feel free to type your question below!`,
               {/* Hidden File Input */}
               <input
                 type="file"
-                accept="image/*,application/pdf" // Adjust accepted file types as needed
+                accept=".doc,.docx,.xls,.xlsx,.txt,.py,.jsx,.js,.json,.md,.html,.css,.pdf/*"
                 style={{ display: 'none' }}
                 ref={fileInputRef}
                 onChange={handleFileUpload}

@@ -8,6 +8,8 @@ import copy
 from .web_search import WebSearchCog
 from .code_files import CodeFilesCog
 from datetime import datetime
+from docx import Document
+from openpyxl import load_workbook
 import uuid
 import tiktoken
 import time
@@ -111,20 +113,45 @@ class ChatBlueprint:
                         except Exception as e:
                             print("Error reading PDF:", e)
                             file_content = "Error processing PDF file."
+                    
+                    # **PROCESS WORD FILES (DOCX)**
+                    elif file.content_type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']:
+                        try:
+                            doc = Document(file_path)
+                            file_content = "\n".join([p.text for p in doc.paragraphs])
+
+                            words = file_content.split()
+                            if len(words) > WORD_LIMIT:
+                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                        except Exception as e:
+                            print("Error reading DOCX:", e)
+                            file_content = "Error processing Word file."
+
+                    # **PROCESS EXCEL FILES (XLSX)**
+                    elif file.content_type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']:
+                        try:
+                            wb = load_workbook(file_path)
+                            sheet = wb.active
+                            file_content = ""
+                            for row in sheet.iter_rows(values_only=True):
+                                file_content += ' '.join(str(cell) for cell in row if cell is not None) + "\n"
+
+                            words = file_content.split()
+                            if len(words) > WORD_LIMIT:
+                                file_content = ' '.join(words[:WORD_LIMIT]) + "\n\n[Text truncated after 50,000 words.]"
+
+                        except Exception as e:
+                            print("Error reading Excel file:", e)
+                            file_content = "Error processing Excel file."
+
+                    # **DEFAULT TO TEXT FILES OR OTHER PLAIN FORMATS**
                     else:
                         file_content = file.read().decode('utf-8', errors='ignore')
-
-                    # # Read the file content
-                    # try:file_content = file.read().decode('utf-8', errors='ignore') 
-                        
-                    # except Exception as e:
-                    #     file_content = "Could not read file content."
-                    #     print("Error reading file:", e)
 
                     # **GENERATE FILE URL**
                     file_url = f"/uploads/{unique_filename}"
                     file_type = file.content_type
-                    
                     
                 else:
                     file_url = None

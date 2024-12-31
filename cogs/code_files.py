@@ -46,6 +46,10 @@ class CodeFilesCog:
                             print(f"Included file: {file_path}")
                         except Exception as e:
                             print(f"Error reading {file_path}: {e}")
+
+        file_path = os.path.join(self.base_dir, "my-chat-frontend/src/ChatApp.jsx")
+        with open(file_path, 'r', encoding='utf-8') as f:
+            code_content += f.read() + "\n\n"
         
         if not code_content:
             print("No Python files found in the specified directories.")
