@@ -506,6 +506,10 @@ class ChatBlueprint:
             print("Full Response:", response)
 
             intent_json = response.choices[0].message.content.strip()
+
+            # Handle markdown-wrapped JSON
+            if intent_json.startswith("```json"):
+                intent_json = intent_json[7:-3].strip()  # Strip off ```json and ```
             # Ensure the response is valid JSON
             intent = json.loads(intent_json)
 
