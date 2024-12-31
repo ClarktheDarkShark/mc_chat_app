@@ -315,27 +315,42 @@ class ChatBlueprint:
                     else:
                         # Retrieve the file from the database
                         uploaded_file = UploadedFile.query.get(file_id)
+                        
                         if uploaded_file:
                             file_path = os.path.join(self.upload_folder, uploaded_file.filename)
-                            try:
-                                # Read the file content
-                                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                                    file_content = f.read()
+                            
+                            # Check if file exists before reading
+                            if os.path.exists(file_path):
+                                try:
+                                    # Read the file content
+                                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                        file_content = f.read()
 
-                                # Limit content size to avoid overwhelming the model
-                                max_tokens = 50000
-                                words = file_content.split()
-                                if len(words) > max_tokens:
-                                    file_content = ' '.join(words[:max_tokens]) + "\n\n[Content truncated...]"
+                                    # Limit content size to avoid overwhelming the model
+                                    max_tokens = 50000
+                                    words = file_content.split()
+                                    if len(words) > max_tokens:
+                                        file_content = ' '.join(words[:max_tokens]) + "\n\n[Content truncated...]"
 
-                                # Pass file content to assistant for processing
-                                assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
+                                    # Pass file content to assistant for processing
+                                    assistant_reply = f"The content of the file '{uploaded_file.filename}' is:\n\n{file_content}"
+                                
+                                except Exception as e:
+                                    print(f"Error reading file: {e}")
+                                    assistant_reply = f"Could not read the file '{uploaded_file.filename}'."
+                            else:
+                                # File does not exist; handle gracefully
+                                print(f"File not found: {file_path}")
+                                assistant_reply = f"File '{uploaded_file.filename}' not found. It may have been deleted or the session expired."
 
-                            except Exception as e:
-                                print("Error reading file:", e)
-                                assistant_reply = f"Could not read the file '{uploaded_file.filename}'."
+                                # Optional: Clean up stale DB entry if the file is missing
+                                db.session.delete(uploaded_file)
+                                db.session.commit()
+                                print(f"Stale database entry for file '{uploaded_file.filename}' has been removed.")
+                        
                         else:
-                            assistant_reply = f"File with ID {file_id} not found."
+                            assistant_reply = f"File with ID {file_id} not found in the database."
+
 
                     # Add the assistant reply to the conversation history
                     conversation_history.append({"role": "assistant", "content": assistant_reply})
