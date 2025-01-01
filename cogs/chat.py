@@ -1,5 +1,5 @@
 # cogs/chat.py
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, send_from_directory
 import os
 import json
 import uuid
@@ -124,6 +124,20 @@ class ChatCog:
             except Exception as e:
                 print(f"Error in /chat route: {e}")
                 return jsonify({"error": str(e)}), 500
+
+        # **New Route to Serve Uploaded Images**
+        @self.bp.route('/uploads/<filename>')
+        def uploaded_file(filename):
+            """
+            Serve uploaded files from the uploads directory.
+            """
+            try:
+                # Security check: Ensure the filename is secure
+                filename = secure_filename(filename)
+                return send_from_directory(self.upload_folder, filename)
+            except Exception as e:
+                print(f"Error serving file {filename}: {e}")
+                return jsonify({"error": "File not found."}), 404
 
         # Other routes can be added here or in separate cogs
 
