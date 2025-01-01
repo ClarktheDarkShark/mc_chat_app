@@ -118,10 +118,15 @@ class ChatCog:
         if request.content_type.startswith('multipart/form-data'):
             return request.form.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
         elif request.is_json:
-            data = request.get_json()
-            return data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
-        else:
-            return "You are a USMC AI agent. Provide relevant responses."
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({"error": "Invalid JSON payload"}), 400
+            except Exception as e:
+                return jsonify({"error": f"Malformed JSON: {str(e)}"}), 400
+                return data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
+            else:
+                return "You are a USMC AI agent. Provide relevant responses."
 
     def get_request_parameters(self):
         if request.content_type.startswith('multipart/form-data'):
@@ -133,7 +138,12 @@ class ChatCog:
                 temperature = 0.7
             file = request.files.get("file", None)
         elif request.is_json:
-            data = request.get_json()
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({"error": "Invalid JSON payload"}), 400
+            except Exception as e:
+                return jsonify({"error": f"Malformed JSON: {str(e)}"}), 400
             message = data.get("message", "")
             model = data.get("model", "gpt-4o")
             try:

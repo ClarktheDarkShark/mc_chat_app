@@ -230,7 +230,7 @@ Feel free to type your question below!`,
 
   const fetchConversations = async () => {
     try {
-      const res = await fetch("/api/conversations", {
+      const res = await fetch("/conversations", {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -251,7 +251,7 @@ Feel free to type your question below!`,
   // Handle selecting a conversation
   const selectConversation = async (convo) => {
     try {
-      const res = await fetch(`/api/conversations/${convo.id}`, {
+      const res = await fetch(`/conversations/${convo.id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -273,7 +273,7 @@ Feel free to type your question below!`,
   // Handle starting a new conversation
   const startNewConversation = async () => {
     try {
-      const res = await fetch("/api/conversations/new", {
+      const res = await fetch("/conversations/new", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
