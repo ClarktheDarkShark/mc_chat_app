@@ -403,7 +403,7 @@ Feel free to type your question below!`,
     }
 
     try {
-      const res = await fetch("/api/chat", fetchOptions); // **CHANGED**
+      const res = await fetch("/chat", fetchOptions); // **CHANGED**
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -411,7 +411,7 @@ Feel free to type your question below!`,
       }
 
       const data = await res.json();
-      console.log("Response from /api/chat:", data);
+      console.log("Response from /chat:", data);
       const { assistant_reply, intent = {}, fileUrl, fileName, fileType } = data;  // Destructure here
 
       if (data.error) {
