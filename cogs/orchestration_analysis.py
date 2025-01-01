@@ -41,7 +41,7 @@ class OrchestrationAnalysisCog:
                         '5. **file_id** should contain the file_id for the requested file if **file_orchestration** is True. Detect file references in the format "FILE:<id>".\n'
                         '6. **active_users** should be True if there is a question about the most active users.\n'
                         '7. **code_orchestration** should be True when the user is asking about code-related queries. Anytime "your code" is in the User Input, this should be True.\n'
-                        '8. **code_structure_orchestration** should be True when the user asks about the code base architecture or structure.\n'  # New guideline
+                        '8. **code_structure_orchestration** should be True when the user asks about visualizing the code base architecture or structure. Return False if only asked to explain.\n'  # New guideline
                         '9. **rand_num** should contain [lowest_num, highest_num] if the user requests a random number within a range.\n\n'
                         'Respond in JSON format.\nIMPORTANT: Boolean values only: True or False.'
                     )
