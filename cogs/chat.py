@@ -12,6 +12,8 @@ from cogs.orchestration_analysis import OrchestrationAnalysisCog
 from utils.response_generation import generate_image, generate_codebase_structure_diagram, generate_chat_response
 from .web_search import WebSearchCog
 from .code_files import CodeFilesCog
+from cogs.code_structure_visualizer import CodeStructureVisualizerCog  # New import
+
 
 WORD_LIMIT = 50000
 
@@ -29,6 +31,7 @@ class ChatCog:
         self.code_files_cog = CodeFilesCog()
         self.orchestration_analysis_cog = OrchestrationAnalysisCog(self.client)
         
+        
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
 
@@ -36,6 +39,8 @@ class ChatCog:
         self.upload_folder = os.path.join(flask_app.instance_path, 'uploads')
         os.makedirs(self.upload_folder, exist_ok=True)
         print(f"Uploads directory set at: {self.upload_folder}")
+
+        self.code_structure_visualizer_cog = CodeStructureVisualizerCog(self.upload_folder)
 
         self.add_routes()
 
@@ -190,8 +195,9 @@ class ChatCog:
                 assistant_reply = f"![Generated Image]({image_url})"
             else:
                 assistant_reply = "No image prompt provided."
-        elif orchestration.get("code_structure_orchestration", False):
-            image_url = generate_codebase_structure_diagram(self.upload_folder)
+        elif orchestration.get("code_structure_orchestration", False):  # Updated condition name
+            # Generate Codebase Structure Diagram using the new cog
+            image_url = self.code_structure_visualizer_cog.generate_codebase_structure_diagram()
             if image_url:
                 assistant_reply = f"![Codebase Structure]({image_url})"
             else:
@@ -203,7 +209,9 @@ class ChatCog:
             if code_content:
                 supplemental_information = {
                     "role": "system",
-                    "content": f"\n\nYou have been supplemented with information from your code base to answer this query.\n***{code_content}***"
+                    "content": (
+                        f"\n\nYou have been supplemented with information from your code base to answer this query.\n***{code_content}***"
+                    )
                 }
             else:
                 assistant_reply = "No code files found to provide."
@@ -217,9 +225,12 @@ class ChatCog:
             )
             supplemental_information = {
                 "role": "system",
-                "content": f"{sys_search_content}\n\nInternet Content:\n***{search_content}***"
+                "content": (
+                    f"{sys_search_content}\n\nInternet Content:\n***{search_content}***"
+                )
             }
         return supplemental_information, assistant_reply
+
 
     def handle_file_orchestration(self, orchestration):
         supplemental_information = {}

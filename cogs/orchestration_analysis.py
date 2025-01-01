@@ -30,6 +30,7 @@ class OrchestrationAnalysisCog:
                         '- "file_id": (string)\n'
                         '- "active_users": (boolean)\n'
                         '- "code_orchestration": (boolean)\n'
+                        '- "code_structure_orchestration": (boolean)\n'  # New key
                         '- "rand_num": (list)\n\n'
                         'Respond with only the JSON object and no additional text.\n\n'
                         'Guidelines:\n'
@@ -40,7 +41,8 @@ class OrchestrationAnalysisCog:
                         '5. **file_id** should contain the file_id for the requested file if **file_orchestration** is True. Detect file references in the format "FILE:<id>".\n'
                         '6. **active_users** should be True if there is a question about the most active users.\n'
                         '7. **code_orchestration** should be True when the user is asking about code-related queries. Anytime "your code" is in the User Input, this should be True.\n'
-                        '8. **rand_num** should contain [lowest_num, highest_num] if the user requests a random number within a range.\n\n'
+                        '8. **code_structure_orchestration** should be True when the user asks about the code base architecture or structure.\n'  # New guideline
+                        '9. **rand_num** should contain [lowest_num, highest_num] if the user requests a random number within a range.\n\n'
                         'Respond in JSON format.\nIMPORTANT: Boolean values only: True or False.'
                     )
                 },
@@ -89,6 +91,6 @@ class OrchestrationAnalysisCog:
                 "file_id": "",
                 "active_users": False,
                 "code_orchestration": False,
+                "code_structure_orchestration": False,  # New key
                 "rand_num": []
             }
-

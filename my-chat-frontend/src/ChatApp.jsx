@@ -183,7 +183,7 @@ const ChatMessage = memo(({ msg }) => {
 
 function ChatApp() {
   const [message, setMessage] = useState("");
-  const [model, setModel] = useState("gpt-4o");
+  const [model, setModel] = useState("gpt-4o-mini");
   const [temperature, setTemperature] = useState(0.7);
   const [systemPrompt, setSystemPrompt] = useState("You are a USMC AI agent. Provide relevant responses.");
 
