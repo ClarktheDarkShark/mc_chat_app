@@ -9,11 +9,10 @@ from models import Conversation, Message, UploadedFile
 from datetime import datetime
 from utils.file_utils import process_uploaded_file
 from cogs.orchestration_analysis import OrchestrationAnalysisCog
-from utils.response_generation import generate_image, generate_codebase_structure_diagram, generate_chat_response
+from utils.response_generation import generate_image, generate_chat_response
 from .web_search import WebSearchCog
 from .code_files import CodeFilesCog
 from cogs.code_structure_visualizer import CodeStructureVisualizerCog  # New import
-
 
 WORD_LIMIT = 50000
 
@@ -30,7 +29,6 @@ class ChatCog:
         self.web_search_cog = WebSearchCog(openai_client=self.client)
         self.code_files_cog = CodeFilesCog()
         self.orchestration_analysis_cog = OrchestrationAnalysisCog(self.client)
-        
         
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.app_instance = app_instance
@@ -86,11 +84,16 @@ class ChatCog:
                 
                 print(f"Orchestration: {orchestration}")
 
-                # Handle image generation orchestration immediately
-                if orchestration.get("image_generation", False):
-                    return self.handle_orchestration(orchestration)
-
                 # Handle orchestration-specific actions
+                # Check if image generation is requested and handle it immediately
+                if orchestration.get("image_generation", False):
+                    return self.handle_image_generation(orchestration, message, conversation_history, conversation_id)
+                
+                # Similarly, handle code structure visualization if requested
+                if orchestration.get("code_structure_orchestration", False):
+                    return self.handle_code_structure_visualization(orchestration, message, conversation_history, conversation_id)
+                
+                # Handle other orchestrations
                 supplemental_information, assistant_reply = self.handle_orchestration(orchestration)
 
                 # Prepare messages for OpenAI API
@@ -134,9 +137,9 @@ class ChatCog:
                     return jsonify({"error": "Invalid JSON payload"}), 400
             except Exception as e:
                 return jsonify({"error": f"Malformed JSON: {str(e)}"}), 400
-                return data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
-            else:
-                return "You are a USMC AI agent. Provide relevant responses."
+            return data.get("system_prompt", "You are a USMC AI agent. Provide relevant responses.")
+        else:
+            return "You are a USMC AI agent. Provide relevant responses."
 
     def get_request_parameters(self):
         if request.content_type.startswith('multipart/form-data'):
@@ -189,34 +192,11 @@ class ChatCog:
         messages_db = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
         return [{"role": msg.role, "content": msg.content} for msg in messages_db]
 
-
     def handle_orchestration(self, orchestration):
         supplemental_information = {}
         assistant_reply = ""
-        
-        if orchestration.get("code_structure_orchestration", False):  # Updated condition name
-            # Generate Codebase Structure Diagram using the new cog
-            image_url = self.code_structure_visualizer_cog.generate_codebase_structure_diagram()
-            if image_url:
-                assistant_reply = f"![Codebase Structure]({image_url})"
-            else:
-                assistant_reply = "Failed to generate codebase structure diagram."
-
-            # Supplement with code files if available
-            code_content = self.code_files_cog.get_all_code_files_content()
-            if code_content:
-                supplemental_information = {
-                    "role": "system",
-                    "content": (
-                        f"\n\nYou have been supplemented with information from your code base to answer this query.\n***{code_content}***"
-                    )
-                }
-            else:
-                assistant_reply = "No code files found to provide."
-
-        elif orchestration.get("file_orchestration", False):
+        if orchestration.get("file_orchestration", False):
             supplemental_information, assistant_reply = self.handle_file_orchestration(orchestration)
-
         elif orchestration.get("code_orchestration", False):
             code_content = self.code_files_cog.get_all_code_files_content()
             if code_content:
@@ -228,29 +208,6 @@ class ChatCog:
                 }
             else:
                 assistant_reply = "No code files found to provide."
-        elif orchestration.get("image_generation", False):
-            # Generate Image using DALL-E 3
-            prompt = orchestration.get("image_prompt", "")
-            if prompt:
-                image_url = generate_image(prompt, self.client)
-                assistant_reply = f"![Generated Image]({image_url})"
-                # Save message to conversation history
-                self.save_messages(session['current_conversation_id'], "assistant", assistant_reply)
-            else:
-                assistant_reply = "No image prompt provided."
-                self.save_messages(session['current_conversation_id'], "assistant", assistant_reply)
-
-            # Immediately return response after generating image
-            return jsonify({
-                "user_message": request.json.get("message", ""),
-                "assistant_reply": assistant_reply,
-                "conversation_history": self.get_conversation_history(session['current_conversation_id']),
-                "orchestration": orchestration,
-                "fileUrl": None,
-                "fileName": None,
-                "fileType": None
-            })
-
         elif orchestration.get("internet_search", False):
             query = request.json.get("message", "")
             search_content = self.web_search_cog.web_search(query, self.get_conversation_history(session.get('current_conversation_id')))
@@ -265,10 +222,16 @@ class ChatCog:
                     f"{sys_search_content}\n\nInternet Content:\n***{search_content}***"
                 )
             }
-            
+        elif orchestration.get("rand_num", []):
+            # Handle random number generation
+            numbers = orchestration.get("rand_num", [])
+            if len(numbers) == 2:
+                import random
+                rand_num = random.randint(numbers[0], numbers[1])
+                assistant_reply = f"Your random number between {numbers[0]} and {numbers[1]} is {rand_num}."
+            else:
+                assistant_reply = "Please provide a valid range for the random number."
         return supplemental_information, assistant_reply
-
-
 
     def handle_file_orchestration(self, orchestration):
         supplemental_information = {}
@@ -306,6 +269,70 @@ class ChatCog:
             assistant_reply = "Uploaded file not found."
         return supplemental_information, assistant_reply
 
+    def handle_image_generation(self, orchestration, user_message, conversation_history, conversation_id):
+        """
+        Handles image generation and returns a response immediately.
+        """
+        supplemental_information = {}
+        assistant_reply = ""
+        prompt = orchestration.get("image_prompt", "")
+        if prompt:
+            image_url = generate_image(prompt, self.client)
+            assistant_reply = f"![Generated Image]({image_url})"
+            conversation_history.append({"role": "assistant", "content": assistant_reply})
+            # Save messages
+            self.save_messages(conversation_id, "assistant", assistant_reply)
+        else:
+            assistant_reply = "No image prompt provided."
+            conversation_history.append({"role": "assistant", "content": assistant_reply})
+            self.save_messages(conversation_id, "assistant", assistant_reply)
+        
+        return jsonify({
+            "user_message": user_message,
+            "assistant_reply": assistant_reply,
+            "conversation_history": conversation_history,
+            "orchestration": orchestration,
+            "fileUrl": None,         # **ADDED**
+            "fileName": None,        # **ADDED**
+            "fileType": None         # **ADDED**
+        })
+
+    def handle_code_structure_visualization(self, orchestration, user_message, conversation_history, conversation_id):
+        """
+        Handles code structure visualization and returns a response immediately.
+        """
+        supplemental_information = {}
+        assistant_reply = ""
+        image_url = self.code_structure_visualizer_cog.generate_codebase_structure_diagram()
+        if image_url:
+            assistant_reply = f"![Codebase Structure]({image_url})"
+            conversation_history.append({"role": "assistant", "content": assistant_reply})
+            self.save_messages(conversation_id, "assistant", assistant_reply)
+        else:
+            assistant_reply = "Failed to generate codebase structure diagram."
+            conversation_history.append({"role": "assistant", "content": assistant_reply})
+            self.save_messages(conversation_id, "assistant", assistant_reply)
+        
+        # Optionally, supplement with code files content
+        code_content = self.code_files_cog.get_all_code_files_content()
+        if code_content:
+            supplemental_information = {
+                "role": "system",
+                "content": (
+                    f"\n\nYou have been supplemented with information from your code base to answer this query.\n***{code_content}***"
+                )
+            }
+        
+        return jsonify({
+            "user_message": user_message,
+            "assistant_reply": assistant_reply,
+            "conversation_history": conversation_history,
+            "orchestration": orchestration,
+            "fileUrl": None,
+            "fileName": None,
+            "fileType": None
+        })
+
     def prepare_messages(self, system_prompt, conversation_history, supplemental_information, user_message):
         additional_instructions = (
             "Generate responses as structured and easy-to-read.  \n"
@@ -321,7 +348,6 @@ class ChatCog:
         messages.append({"role": "user", "content": user_message})
         print('Final messages:', json.dumps(messages, indent=2))
         return messages
-
 
     def trim_conversation(self, messages, max_tokens=WORD_LIMIT):
         import tiktoken

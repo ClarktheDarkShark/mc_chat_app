@@ -2,6 +2,7 @@
 import os
 import uuid
 import graphviz
+import hashlib
 from flask import current_app
 
 class CodeStructureVisualizerCog:
@@ -13,8 +14,18 @@ class CodeStructureVisualizerCog:
         """
         self.upload_folder = upload_folder
 
-        # Explicitly set Graphviz path
+        # Explicitly add Graphviz path
         os.environ["PATH"] += os.pathsep + '/app/.heroku-buildpack-graphviz/usr/bin'
+
+        # Define directories and file types to exclude
+        self.exclude_dirs = {
+            'uploads', '.git', '__pycache__', 'node_modules', 'venv',
+            'migrations', 'tests', 'docs', 'dist', 'build'
+        }
+        self.exclude_file_types = {'.pyc', '.pyo', '.log', '.env'}
+
+        # Maximum recursion depth
+        self.max_depth = 4
 
     def generate_codebase_structure_diagram(self):
         """
@@ -29,20 +40,27 @@ class CodeStructureVisualizerCog:
 
             print(f"Scanning root directory: {root_dir}")
 
+            # Create a hash of the directory structure to use for caching
+            dir_hash = self.hash_directory_structure(root_dir)
+            output_filename = f"codebase_structure_{dir_hash}"
+            image_filename = f"{output_filename}.png"
+            image_path = os.path.join(self.upload_folder, image_filename)
+            image_url = f"/uploads/{image_filename}"
+
+            # Check if the diagram already exists
+            if os.path.exists(image_path):
+                print(f"Using cached diagram at: {image_path}")
+                return image_url
+
+            # Initialize Graphviz Digraph
             dot = graphviz.Digraph(comment='Codebase Structure', format='png')
             dot.attr(dpi='300')  # High resolution for clarity
 
-            # Directories to exclude from traversal
-            exclude_dirs = {'uploads', '.git', '__pycache__', 'node_modules', 'venv'}
-
-            # Maximum recursion depth to prevent excessive processing
-            max_depth = 5
-
             def add_nodes_edges(current_path, parent=None, depth=0):
-                if depth > max_depth:
+                if depth > self.max_depth:
                     return
                 directory = os.path.basename(current_path)
-                node_id = current_path.replace(os.sep, '_')  # Unique node ID
+                node_id = self.create_node_id(current_path)
 
                 if parent:
                     dot.node(node_id, directory, shape='folder')
@@ -51,16 +69,18 @@ class CodeStructureVisualizerCog:
                     dot.node(node_id, directory, shape='folder')  # Root node
 
                 try:
-                    for entry in os.listdir(current_path):
+                    for entry in sorted(os.listdir(current_path)):
                         path = os.path.join(current_path, entry)
-                        # Skip excluded directories
-                        if os.path.isdir(path) and entry in exclude_dirs:
-                            print(f"Excluding directory: {path}")
-                            continue
                         if os.path.isdir(path):
+                            if entry in self.exclude_dirs:
+                                print(f"Excluding directory: {path}")
+                                continue
                             add_nodes_edges(path, node_id, depth + 1)
                         else:
-                            file_node_id = path.replace(os.sep, '_')
+                            if self.should_exclude_file(entry):
+                                print(f"Excluding file: {path}")
+                                continue
+                            file_node_id = self.create_node_id(path)
                             dot.node(file_node_id, entry, shape='note')
                             dot.edge(node_id, file_node_id)
                 except PermissionError:
@@ -70,12 +90,8 @@ class CodeStructureVisualizerCog:
 
             add_nodes_edges(root_dir)
 
-            # Generate the diagram
-            output_filename = f"codebase_structure_{uuid.uuid4()}"
+            # Render the diagram
             dot.render(filename=output_filename, directory=self.upload_folder, cleanup=True)
-            image_path = os.path.join(self.upload_folder, f"{output_filename}.png")
-            image_url = f"/uploads/{output_filename}.png"
-
             print(f"Codebase structure diagram generated at: {image_path}")
 
             return image_url
@@ -83,3 +99,48 @@ class CodeStructureVisualizerCog:
         except Exception as e:
             print(f"Error generating codebase structure diagram: {e}")
             return None
+
+    def create_node_id(self, path):
+        """
+        Create a unique node ID by hashing the file path.
+
+        :param path: File or directory path.
+        :return: Unique node ID as a string.
+        """
+        return hashlib.md5(path.encode()).hexdigest()
+
+    def hash_directory_structure(self, root_dir):
+        """
+        Create a hash representing the current directory structure.
+
+        :param root_dir: Root directory to hash.
+        :return: MD5 hash as a string.
+        """
+        hash_md5 = hashlib.md5()
+        for root, dirs, files in os.walk(root_dir):
+            # Exclude directories
+            dirs[:] = [d for d in dirs if d not in self.exclude_dirs]
+            for file in sorted(files):
+                if self.should_exclude_file(file):
+                    continue
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'rb') as f:
+                        while True:
+                            chunk = f.read(4096)
+                            if not chunk:
+                                break
+                            hash_md5.update(chunk)
+                except Exception as e:
+                    print(f"Error hashing file {filepath}: {e}")
+        return hash_md5.hexdigest()
+
+    def should_exclude_file(self, filename):
+        """
+        Determine if a file should be excluded based on its extension.
+
+        :param filename: Name of the file.
+        :return: True if the file should be excluded, False otherwise.
+        """
+        _, ext = os.path.splitext(filename)
+        return ext in self.exclude_file_types
