@@ -1,4 +1,3 @@
-# cogs/code_structure_visualizer.py
 import os
 import uuid
 import graphviz
@@ -13,6 +12,9 @@ class CodeStructureVisualizerCog:
         """
         self.upload_folder = upload_folder
 
+        # Explicitly add Graphviz binary path to environment
+        os.environ["PATH"] += os.pathsep + '/usr/bin'
+
     def generate_codebase_structure_diagram(self):
         """
         Generate a visual representation of the codebase structure using Graphviz.
@@ -22,7 +24,7 @@ class CodeStructureVisualizerCog:
         try:
             # Define the root directory to scan (project root)
             current_file_dir = os.path.dirname(os.path.abspath(__file__))  # Directory where this cog is located
-            root_dir = os.path.abspath(os.path.join(current_file_dir, '..'))  # Adjust as needed to point to the project root
+            root_dir = os.path.abspath(os.path.join(current_file_dir, '..'))  # Adjust to point to project root
 
             print(f"Scanning root directory: {root_dir}")
 
