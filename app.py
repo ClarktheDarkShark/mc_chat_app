@@ -73,6 +73,7 @@ def create_app():
 
     return app
 
+
 # Create the app instance globally for Gunicorn
 app = create_app()
 
