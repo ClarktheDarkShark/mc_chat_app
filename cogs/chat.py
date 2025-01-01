@@ -189,6 +189,7 @@ class ChatCog:
         messages_db = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp).all()
         return [{"role": msg.role, "content": msg.content} for msg in messages_db]
 
+
     def handle_orchestration(self, orchestration):
         supplemental_information = {}
         assistant_reply = ""
