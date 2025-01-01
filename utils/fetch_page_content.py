@@ -74,6 +74,7 @@ def extract_pdf_text(pdf_bytes):
         return "[Failed to extract text from PDF]"
 
 
+
 def extract_text_with_ocr(page):
     """Extract text from a PDF page using OCR (for image-based PDFs)."""
     try:

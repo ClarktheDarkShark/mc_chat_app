@@ -113,6 +113,7 @@ def extract_text_from_docx(file_path):
         print("Error reading DOCX:", e)
         return "Error processing Word file."
 
+
 def extract_text_from_excel(file_path):
     try:
         wb = load_workbook(file_path)

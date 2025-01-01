@@ -6,6 +6,7 @@ from .orchestration_analysis import OrchestrationAnalysisCog
 from .web_search import WebSearchCog
 from .code_files import CodeFilesCog
 
+
 def register_cogs(app, flask_app):
     chat_cog = ChatCog(app, flask_app)
     uploads_cog = UploadsCog(chat_cog.upload_folder)

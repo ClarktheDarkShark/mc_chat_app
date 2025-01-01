@@ -22,6 +22,7 @@ class CodeFilesCog:
         
         code_content = ""
         
+        
         # Include Python files from the base directory
         for file in os.listdir(self.base_dir):
             if file.endswith('.py') and os.path.isfile(os.path.join(self.base_dir, file)):

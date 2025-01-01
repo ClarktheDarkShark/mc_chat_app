@@ -262,6 +262,7 @@ class ChatCog:
         print('Final messages:', json.dumps(messages, indent=2))
         return messages
 
+
     def trim_conversation(self, messages, max_tokens=WORD_LIMIT):
         import tiktoken
         encoding = tiktoken.encoding_for_model("gpt-4o")

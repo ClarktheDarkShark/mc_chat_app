@@ -35,6 +35,7 @@ class ConversationsCog:
             conversation_history = [{"role": msg.role, "content": msg.content} for msg in messages]
             return jsonify({"conversation_history": conversation_history})
 
+
         @self.bp.route("/conversations/new", methods=["POST"])
         def new_conversation():
             session_id = session.get('session_id', 'unknown_session')

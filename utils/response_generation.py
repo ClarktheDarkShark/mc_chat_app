@@ -68,6 +68,7 @@ def generate_codebase_structure_diagram(upload_folder):
         print(f"Error generating codebase structure diagram: {e}")
         return None
 
+
 def generate_chat_response(openai_client, messages, model, temperature):
     """Generate a chat response using OpenAI's ChatCompletion."""
     try:

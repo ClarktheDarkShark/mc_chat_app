@@ -25,3 +25,4 @@ class UploadsCog:
             
             # Serve the file
             return send_from_directory(self.upload_folder, filename)
+

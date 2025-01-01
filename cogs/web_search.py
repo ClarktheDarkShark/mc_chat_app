@@ -148,3 +148,4 @@ class WebSearchCog:
                 contents.append(content[:3000])  # Limit content length
 
         return '\n'.join(contents) if contents else "No detailed information found."
+
