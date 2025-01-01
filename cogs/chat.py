@@ -202,6 +202,16 @@ class ChatCog:
                 assistant_reply = f"![Codebase Structure]({image_url})"
             else:
                 assistant_reply = "Failed to generate codebase structure diagram."
+            code_content = self.code_files_cog.get_all_code_files_content()
+            if code_content:
+                supplemental_information = {
+                    "role": "system",
+                    "content": (
+                        f"\n\nYou have been supplemented with information from your code base to answer this query.\n***{code_content}***"
+                    )
+                }
+            else:
+                assistant_reply = "No code files found to provide."
         elif orchestration.get("file_orchestration", False):
             supplemental_information, assistant_reply = self.handle_file_orchestration(orchestration)
         elif orchestration.get("code_orchestration", False):
