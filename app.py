@@ -43,6 +43,7 @@ def create_app():
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
     # Initialize extensions
     CORS(app, supports_credentials=True)
     Session(app)  # Initialize server-side sessions
