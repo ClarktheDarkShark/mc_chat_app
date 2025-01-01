@@ -86,6 +86,10 @@ class ChatCog:
                 
                 print(f"Orchestration: {orchestration}")
 
+                # Handle image generation orchestration immediately
+                if orchestration.get("image_generation", False):
+                    return self.handle_orchestration(orchestration)
+
                 # Handle orchestration-specific actions
                 supplemental_information, assistant_reply = self.handle_orchestration(orchestration)
 
