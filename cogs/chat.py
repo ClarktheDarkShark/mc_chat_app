@@ -188,13 +188,30 @@ class ChatCog:
     def handle_orchestration(self, orchestration):
         supplemental_information = {}
         assistant_reply = ""
+
         if orchestration.get("image_generation", False):
+            # Generate Image using DALL-E 3
             prompt = orchestration.get("image_prompt", "")
             if prompt:
                 image_url = generate_image(prompt, self.client)
                 assistant_reply = f"![Generated Image]({image_url})"
+                # Save message to conversation history
+                self.save_messages(session['current_conversation_id'], "assistant", assistant_reply)
             else:
                 assistant_reply = "No image prompt provided."
+                self.save_messages(session['current_conversation_id'], "assistant", assistant_reply)
+
+            # Immediately return response after generating image
+            return jsonify({
+                "user_message": request.json.get("message", ""),
+                "assistant_reply": assistant_reply,
+                "conversation_history": self.get_conversation_history(session['current_conversation_id']),
+                "orchestration": orchestration,
+                "fileUrl": None,
+                "fileName": None,
+                "fileType": None
+            })
+        
         elif orchestration.get("code_structure_orchestration", False):  # Updated condition name
             # Generate Codebase Structure Diagram using the new cog
             image_url = self.code_structure_visualizer_cog.generate_codebase_structure_diagram()
@@ -202,6 +219,8 @@ class ChatCog:
                 assistant_reply = f"![Codebase Structure]({image_url})"
             else:
                 assistant_reply = "Failed to generate codebase structure diagram."
+
+            # Supplement with code files if available
             code_content = self.code_files_cog.get_all_code_files_content()
             if code_content:
                 supplemental_information = {
@@ -212,8 +231,10 @@ class ChatCog:
                 }
             else:
                 assistant_reply = "No code files found to provide."
+
         elif orchestration.get("file_orchestration", False):
             supplemental_information, assistant_reply = self.handle_file_orchestration(orchestration)
+
         elif orchestration.get("code_orchestration", False):
             code_content = self.code_files_cog.get_all_code_files_content()
             if code_content:
@@ -225,6 +246,7 @@ class ChatCog:
                 }
             else:
                 assistant_reply = "No code files found to provide."
+
         elif orchestration.get("internet_search", False):
             query = request.json.get("message", "")
             search_content = self.web_search_cog.web_search(query, self.get_conversation_history(session.get('current_conversation_id')))
@@ -239,7 +261,9 @@ class ChatCog:
                     f"{sys_search_content}\n\nInternet Content:\n***{search_content}***"
                 )
             }
+            
         return supplemental_information, assistant_reply
+
 
 
     def handle_file_orchestration(self, orchestration):
