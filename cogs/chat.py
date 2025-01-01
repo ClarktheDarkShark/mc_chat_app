@@ -78,6 +78,7 @@ class ChatCog:
                     conversation_history=conversation_history,
                     session_id=session_id
                 )
+                
                 print(f"Orchestration: {orchestration}")
 
                 # Handle orchestration-specific actions
