@@ -158,7 +158,7 @@ class ChatCog:
     def get_request_parameters(self):
         if request.content_type.startswith('multipart/form-data'):
             message = request.form.get("message", "")
-            model = request.form.get("model", "gpt-4o")
+            model = request.form.get("model", "gpt-4o-mini")
             try:
                 temperature = float(request.form.get("temperature", 0.7))
             except ValueError:
@@ -172,7 +172,7 @@ class ChatCog:
             except Exception as e:
                 return jsonify({"error": f"Malformed JSON: {str(e)}"}), 400
             message = data.get("message", "")
-            model = data.get("model", "gpt-4o")
+            model = data.get("model", "gpt-4o-mini")
             try:
                 temperature = float(data.get("temperature", 0.7))
             except ValueError:
@@ -180,7 +180,7 @@ class ChatCog:
             file = None
         else:
             message = ""
-            model = "gpt-4o"
+            model = "gpt-4o-mini"
             temperature = 0.7
             file = None
         return message, model, temperature, file
@@ -365,7 +365,7 @@ class ChatCog:
 
     def trim_conversation(self, messages, max_tokens=WORD_LIMIT):
         import tiktoken
-        encoding = tiktoken.encoding_for_model("gpt-4o")
+        encoding = tiktoken.encoding_for_model("gpt-4o-mini")
         total_tokens = 0
         trimmed = []
         
